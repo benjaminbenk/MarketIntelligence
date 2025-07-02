@@ -129,16 +129,43 @@ for country, coords in middle_points.items():
         popup=country
     ).add_to(m)
 
-# --- Draw connection lines between countries for each interconnector ---
+# Define interconnector endpoints
+interconnectors_data = [
+    {"name": "Turkey-Bulgaria", "from": "Turkey", "to": "Bulgaria", "lat": 41.7, "lon": 27.0},
+    {"name": "Bulgaria-Romania", "from": "Bulgaria", "to": "Romania", "lat": 43.8, "lon": 28.6},
+    {"name": "Bulgaria-Serbia", "from": "Bulgaria", "to": "Serbia", "lat": 43.5, "lon": 22.5},
+    {"name": "Greece-Bulgaria", "from": "Greece", "to": "Bulgaria", "lat": 41.4, "lon": 23.3},
+    {"name": "Kiskundorozsma", "from": "Serbia", "to": "Hungary", "lat": 46.1, "lon": 19.9},
+    {"name": "Serbia-Romania", "from": "Serbia", "to": "Romania", "lat": 45.3, "lon": 21.0},
+    {"name": "Drávaszerdahely", "from": "Croatia", "to": "Hungary", "lat": 45.9, "lon": 17.8},
+    {"name": "Croatia-Slovenia", "from": "Croatia", "to": "Slovenia", "lat": 45.5, "lon": 15.6},
+    {"name": "HAG", "from": "Austria", "to": "Hungary", "lat": 47.8, "lon": 16.6},
+    {"name": "Austria-Slovakia", "from": "Austria", "to": "Slovakia", "lat": 48.2, "lon": 16.9},
+    {"name": "Balassagyarmat", "from": "Hungary", "to": "Slovakia", "lat": 47.9, "lon": 18.0},
+    {"name": "Csanádpalota", "from": "Hungary", "to": "Romania", "lat": 46.3, "lon": 21.3},
+    {"name": "Bereg", "from": "Hungary", "to": "Ukraine", "lat": 48.2, "lon": 22.6},
+    {"name": "Romania-Moldova", "from": "Romania", "to": "Moldova", "lat": 47.2, "lon": 27.0},
+    {"name": "Romania-Ukraine", "from": "Romania", "to": "Ukraine", "lat": 45.3, "lon": 28.3},
+    {"name": "Slovakia-Ukraine", "from": "Slovakia", "to": "Ukraine", "lat": 48.6, "lon": 21.9},
+]
+
+df = pd.DataFrame(interconnectors_data)
+
+# Add interconnector markers
 for _, row in filtered_df.iterrows():
-    # Draw line from interconnector point to its country midpoint (if available)
-    if row['Country'] in middle_points:
-        folium.PolyLine(
-            locations=[middle_points[row['Country']], [row["Lat"], row["Lon"]]],
-            color="red",
-            weight=2,
-            opacity=0.6
-        ).add_to(m)
+    folium.Marker(
+        location=[row["lat"], row["lon"]],
+        tooltip=f"{row['name']} ({row['from']} → {row['to']})",
+        icon=folium.Icon(color="blue", icon="info-sign")
+    ).add_to(m)
+
+    from_mid = middle_points.get(row["from"])
+    to_mid = middle_points.get(row["to"])
+
+    if from_mid:
+        folium.PolyLine([from_mid, [row["lat"], row["lon"]]], color="gray", weight=2.5, opacity=0.6).add_to(m)
+    if to_mid:
+        folium.PolyLine([to_mid, [row["lat"], row["lon"]]], color="gray", weight=2.5, opacity=0.6).add_to(m)
 
 st_data = st_folium(m, width=1000, height=600)
 
