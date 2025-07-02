@@ -172,8 +172,6 @@ with st.form("add_edit_form", clear_on_submit=True):
             "Interconnector": interconnector,
             "Date": date.strftime("%Y-%m-%d"),
             "Info": info,
-            "Lat": lat,
-            "Lon": lon
         }
         exists = not df.empty and (df['ID'] == id_val).any()
         if exists:
@@ -183,6 +181,24 @@ with st.form("add_edit_form", clear_on_submit=True):
         save_data(df)
         st.success("Information saved to Google Sheet!")
         st.rerun()
+
+# Find lat/lon based on country and interconnector selection
+auto_lat, auto_lon = None, None
+for ic in interconnectors_data:
+    if (
+        (country == ic['from'] or country == ic['to']) and
+        (interconnector == ic['name'])
+    ):
+        auto_lat, auto_lon = ic['lat'], ic['lon']
+        break
+
+if auto_lat is not None and auto_lon is not None:
+    st.info(f"Auto-filled location: {auto_lat}, {auto_lon}")
+    lat = auto_lat
+    lon = auto_lon
+else:
+    lat = st.number_input("Latitude", value=47.0, format="%.6f")
+    lon = st.number_input("Longitude", value=20.0, format="%.6f")
 
 # --- Data Download ---
 st.header("Download Data")
