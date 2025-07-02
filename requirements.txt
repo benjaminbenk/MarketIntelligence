@@ -1,7 +1,7 @@
-gspread
-oauth2client
+streamlit
 pandas
 folium
 streamlit-folium
-streamlit
+gspread
+google-auth
 openpyxl
