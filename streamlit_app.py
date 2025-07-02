@@ -9,8 +9,8 @@ from io import BytesIO
 import numpy as np
 
 # --- Google Sheets Setup ---
-SHEET_NAME = "MarketIntelligenceGAS"  # Change this to your actual sheet name
-EXCEL_LINK = "https://docs.google.com/spreadsheets/d/12jH5gmwMopM9j5uTWOtc6wEafscgf5SvT8gDmoAFawE/edit?gid=0#gid=0"  # <-- your actual Google Sheet URL
+SHEET_NAME = "MarketIntelligenceGAS"  # Your actual sheet name
+EXCEL_LINK = "https://docs.google.com/spreadsheets/d/12jH5gmwMopM9j5uTWOtc6wEafscgf5SvT8gDmoAFawE/edit?gid=0#gid=0"
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -92,7 +92,6 @@ m = folium.Map(location=[47, 20], zoom_start=6, tiles="CartoDB Positron")
 
 # Draw markers for each interconnector with improved popups showing all previous entries for that country-interconnector
 for _, row in filtered_df.iterrows():
-    # Filter all history for this Country and Interconnector
     history_entries = df[(df['Country'] == row['Country']) & (df['Interconnector'] == row['Interconnector'])]
     history_entries = history_entries.sort_values(by='Date', ascending=False)
     history_html = ""
@@ -104,7 +103,7 @@ for _, row in filtered_df.iterrows():
         </div>
         """
     popup_html = f"""
-    <div style="width:340px;max-height:340px;overflow:auto;">
+    <div style="width:400px;max-height:400px;overflow:auto;">
         <div style="font-size:1.2em;font-weight:bold;margin-bottom:0.5em;color:#1a237e">
             {row['Country']} - {row['Interconnector']}
         </div>
@@ -114,7 +113,7 @@ for _, row in filtered_df.iterrows():
     folium.Marker(
         location=[row["Lat"], row["Lon"]],
         tooltip=f"{row['Interconnector']} ({row['Country']})",
-        popup=folium.Popup(popup_html, max_width=400, min_width=340),
+        popup=folium.Popup(popup_html, max_width=460, min_width=340),
         icon=folium.Icon(color="blue", icon="info-sign")
     ).add_to(m)
 
@@ -129,50 +128,21 @@ for country, coords in middle_points.items():
         popup=country
     ).add_to(m)
 
-# Define interconnector endpoints
-interconnectors_data = [
-    {"name": "Turkey-Bulgaria", "from": "Turkey", "to": "Bulgaria", "lat": 41.7, "lon": 27.0},
-    {"name": "Bulgaria-Romania", "from": "Bulgaria", "to": "Romania", "lat": 43.8, "lon": 28.6},
-    {"name": "Bulgaria-Serbia", "from": "Bulgaria", "to": "Serbia", "lat": 43.5, "lon": 22.5},
-    {"name": "Greece-Bulgaria", "from": "Greece", "to": "Bulgaria", "lat": 41.4, "lon": 23.3},
-    {"name": "Kiskundorozsma", "from": "Serbia", "to": "Hungary", "lat": 46.1, "lon": 19.9},
-    {"name": "Serbia-Romania", "from": "Serbia", "to": "Romania", "lat": 45.3, "lon": 21.0},
-    {"name": "Drávaszerdahely", "from": "Croatia", "to": "Hungary", "lat": 45.9, "lon": 17.8},
-    {"name": "Croatia-Slovenia", "from": "Croatia", "to": "Slovenia", "lat": 45.5, "lon": 15.6},
-    {"name": "HAG", "from": "Austria", "to": "Hungary", "lat": 47.8, "lon": 16.6},
-    {"name": "Austria-Slovakia", "from": "Austria", "to": "Slovakia", "lat": 48.2, "lon": 16.9},
-    {"name": "Balassagyarmat", "from": "Hungary", "to": "Slovakia", "lat": 47.9, "lon": 18.0},
-    {"name": "Csanádpalota", "from": "Hungary", "to": "Romania", "lat": 46.3, "lon": 21.3},
-    {"name": "Bereg", "from": "Hungary", "to": "Ukraine", "lat": 48.2, "lon": 22.6},
-    {"name": "Romania-Moldova", "from": "Romania", "to": "Moldova", "lat": 47.2, "lon": 27.0},
-    {"name": "Romania-Ukraine", "from": "Romania", "to": "Ukraine", "lat": 45.3, "lon": 28.3},
-    {"name": "Slovakia-Ukraine", "from": "Slovakia", "to": "Ukraine", "lat": 48.6, "lon": 21.9},
-]
-
-df = pd.DataFrame(interconnectors_data)
-
-# Add interconnector markers
+# Draw lines from each marker to its country midpoint
 for _, row in filtered_df.iterrows():
-    folium.Marker(
-        location=[row["lat"], row["lon"]],
-        tooltip=f"{row['name']} ({row['from']} → {row['to']})",
-        icon=folium.Icon(color="blue", icon="info-sign")
-    ).add_to(m)
-
-    from_mid = middle_points.get(row["from"])
-    to_mid = middle_points.get(row["to"])
-
-    if from_mid:
-        folium.PolyLine([from_mid, [row["lat"], row["lon"]]], color="gray", weight=2.5, opacity=0.6).add_to(m)
-    if to_mid:
-        folium.PolyLine([to_mid, [row["lat"], row["lon"]]], color="gray", weight=2.5, opacity=0.6).add_to(m)
+    if row['Country'] in middle_points:
+        folium.PolyLine(
+            locations=[middle_points[row['Country']], [row["Lat"], row["Lon"]]],
+            color="red",
+            weight=2,
+            opacity=0.6
+        ).add_to(m)
 
 st_data = st_folium(m, width=1000, height=600)
 
 # --- Filtering and viewing previous entries (full table) ---
 st.header("View and Filter All Entries")
 with st.expander("Show/Hide Table"):
-    # Filter options for the big table
     country_f = st.multiselect("Filter by Country", countries, default=countries)
     interconnector_f = st.multiselect("Filter by Interconnector", interconnectors, default=interconnectors)
     min_date_f = pd.to_datetime(df['Date']).min() if not df.empty else datetime(2000,1,1)
