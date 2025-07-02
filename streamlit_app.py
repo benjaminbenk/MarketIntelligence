@@ -130,9 +130,9 @@ for ic in interconnectors_data:
     if from_mid and to_mid:
         folium.PolyLine(
             locations=[from_mid, [ic["lat"], ic["lon"]], to_mid],
-            color="green",
+            color="grey",
             weight=1,
-            opacity=0.7,
+            opacity=1,
             dash_array="10,10"
         ).add_to(m)
     folium.Marker(
@@ -145,7 +145,7 @@ for ic in interconnectors_data:
 for country, coords in middle_points.items():
     folium.CircleMarker(
         location=coords,
-        radius=6,
+        radius=2,
         color="black",
         fill=True,
         fill_opacity=0.8,
