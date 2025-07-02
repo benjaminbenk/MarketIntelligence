@@ -17,7 +17,7 @@ credentials = Credentials.from_service_account_info(gcp_secrets, scopes=scopes)
 
 # 2. Connect to Google Sheets
 gc = gspread.authorize(credentials)
-SHEET_NAME = "YOUR_GOOGLE_SHEET_NAME"  # Change this to your actual sheet name
+SHEET_NAME = "MarketIntelligenceGAS"  # Change this to your actual sheet name
 worksheet = gc.open(SHEET_NAME).sheet1  # or .worksheet('Sheet1') if you have multiple tabs
 
 # 3. Read data
