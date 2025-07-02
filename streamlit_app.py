@@ -182,7 +182,7 @@ with st.form("add_edit_form", clear_on_submit=True):
             df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         save_data(df)
         st.success("Information saved to Google Sheet!")
-        st.experimental_rerun()
+        st.rerun()
 
 # --- Data Download ---
 st.header("Download Data")
