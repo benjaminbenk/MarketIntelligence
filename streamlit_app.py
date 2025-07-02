@@ -107,7 +107,7 @@ else:
     filtered_df = df
 
 # --- Map Visualization ---
-m = folium.Map(location=[47, 20], zoom_start=6, tiles="CartoDB Positron")
+m = folium.Map(location=[47, 20], zoom_start=5, tiles="CartoDB Positron")
 
 # Draw markers for each interconnector entry from Google Sheet
 for _, row in filtered_df.iterrows():
@@ -120,7 +120,7 @@ for _, row in filtered_df.iterrows():
         location=[row["Lat"], row["Lon"]],
         tooltip=f"{row['Interconnector']} ({row['Country']})",
         popup=folium.Popup(popup_html, max_width=250),
-        icon=folium.Icon(color="blue", icon="info-sign")
+        icon=folium.Icon(color="red", icon="landmark")
     ).add_to(m)
 
 # Draw static interconnector lines and markers
@@ -128,17 +128,17 @@ for ic in interconnectors_data:
     from_mid = middle_points.get(ic["from"])
     to_mid = middle_points.get(ic["to"])
     if from_mid and to_mid:
-        folium.PolyLine(
+        folium.Line(
             locations=[from_mid, [ic["lat"], ic["lon"]], to_mid],
             color="green",
-            weight=3,
+            weight=1,
             opacity=0.7,
             dash_array="10,10"
         ).add_to(m)
     folium.Marker(
         location=[ic["lat"], ic["lon"]],
         tooltip=f"{ic['name']} ({ic['from']} → {ic['to']})",
-        icon=folium.Icon(color="orange", icon="cloud")
+        icon=folium.Icon(color="grey", icon="pipe-valve")
     ).add_to(m)
 
 # Draw country midpoint circles
