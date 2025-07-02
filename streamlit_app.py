@@ -130,14 +130,16 @@ for country, coords in middle_points.items():
 
 # Draw lines from each marker to its correct midpoint using the renamed gas point
 for _, row in filtered_df.iterrows():
-    matched_keys = [key for key in middle_points.keys() if key.startswith(row['Country'])]
-    if matched_keys:
-        point_key = matched_keys[0]
+    if all(pd.notnull([row.get("From Lat"), row.get("From Lon"), row.get("To Lat"), row.get("To Lon")])):
         folium.PolyLine(
-            locations=[middle_points[point_key], [row["Lat"], row["Lon"]]],
-            color="red",
-            weight=2,
-            opacity=0.6
+            locations=[
+                [row["From Lat"], row["From Lon"]],
+                [row["To Lat"], row["To Lon"]]
+            ],
+            color="purple",
+            weight=3,
+            opacity=0.7,
+            tooltip=f"{row['From Node']} → {row['To Node']}"
         ).add_to(m)
 
 st_data = st_folium(m, width=1000, height=600)
