@@ -50,6 +50,32 @@ for _, row in filtered_df.iterrows():
         folium.PolyLine([from_mid, [row["lat"], row["lon"]]], color="gray", weight=2.5, opacity=0.6).add_to(m)
     if to_mid:
         folium.PolyLine([to_mid, [row["lat"], row["lon"]]], color="gray", weight=2.5, opacity=0.6).add_to(m)
+        
+# Add country midpoint markers
+for country, coords in middle_points.items():
+    folium.CircleMarker(
+        location=coords,
+        radius=6,
+        color="black",
+        fill=True,
+        fill_opacity=0.8,
+        popup=country
+    ).add_to(m)
+    
+# Add legend
+legend_html = """
+{% macro html(this, kwargs) %}
+<div style='position: fixed; top: 20px; right: 20px; width: 200px; height: auto;
+     border: 2px solid grey; z-index: 9999; font-size: 14px;
+     background-color: white; padding: 10px;'>
+<b>Legend</b><br>
+<i class='fa fa-info-sign' style='color:blue'></i> Interconnector<br>
+<span style='color:black; font-size:20px;'>&#9679;</span> Country Midpoint<br>
+<i class='fa fa-cloud' style='color:green'></i> LNG Terminal<br>
+<i class='fa fa-archive' style='color:orange'></i> Gas Storage Site
+</div>
+{% endmacro %}
+"""
 
 # Show map
 st_data = st_folium(m, width=1000, height=600)
