@@ -15,7 +15,6 @@ SCOPES = [
 ]
 
 def get_gs_client():
-    # Pull credentials from Streamlit secrets
     gcp_info = st.secrets["gcp_service_account"]
     credentials = Credentials.from_service_account_info(gcp_info, scopes=SCOPES)
     return gspread.authorize(credentials)
@@ -84,6 +83,7 @@ else:
 # --- Map Visualization ---
 m = folium.Map(location=[47, 20], zoom_start=6, tiles="CartoDB Positron")
 
+# Draw markers for each interconnector
 for _, row in filtered_df.iterrows():
     popup_html = f"""
     <b>{row['Country']} - {row['Interconnector']}</b><br>
@@ -97,6 +97,7 @@ for _, row in filtered_df.iterrows():
         icon=folium.Icon(color="blue", icon="info-sign")
     ).add_to(m)
 
+# Draw country midpoint circles
 for country, coords in middle_points.items():
     folium.CircleMarker(
         location=coords,
@@ -106,6 +107,33 @@ for country, coords in middle_points.items():
         fill_opacity=0.8,
         popup=country
     ).add_to(m)
+
+# --- Draw connection lines between countries for each interconnector ---
+def find_closest_midpoint(lat, lon, middle_points):
+    import numpy as np
+    min_dist = None
+    closest = None
+    for c, (clat, clon) in middle_points.items():
+        dist = np.sqrt((lat - clat)**2 + (lon - clon)**2)
+        if min_dist is None or dist < min_dist:
+            min_dist = dist
+            closest = c
+    return closest
+
+# We'll try to draw a line from each interconnector's marker to its country midpoint and also between pairs
+for _, row in filtered_df.iterrows():
+    # Draw line from interconnector point to its country midpoint (if available)
+    if row['Country'] in middle_points:
+        folium.PolyLine(
+            locations=[middle_points[row['Country']], [row["Lat"], row["Lon"]]],
+            color="red",
+            weight=2,
+            opacity=0.6
+        ).add_to(m)
+
+    # Optionally, try to connect points if your data contains "CountryFrom" and "CountryTo"
+    # Or connect to other nearby interconnectors
+    # (If you want more advanced logic, you can ask for it)
 
 st_data = st_folium(m, width=1000, height=600)
 
