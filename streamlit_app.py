@@ -159,11 +159,26 @@ st.header("Add or Edit Interconnector Info")
 with st.form("add_edit_form", clear_on_submit=True):
     id_val = st.number_input("ID (for new, pick a new number)", value=int(df['ID'].max()+1) if not df.empty else 1, step=1)
     country = st.selectbox("Country", countries)
-    interconnector = st.text_input("Interconnector")
+    # Use dropdown for interconnector name, but allow manual input if needed
+    interconnector_names = [ic['name'] for ic in interconnectors_data if country in (ic['from'], ic['to'])]
+    interconnector = st.selectbox("Interconnector", interconnector_names) if interconnector_names else st.text_input("Interconnector")
+
+    # Try to deduce lat/lon from the selected interconnector (and country)
+    auto_lat, auto_lon = None, None
+    for ic in interconnectors_data:
+        if (country == ic['from'] or country == ic['to']) and (interconnector == ic['name']):
+            auto_lat, auto_lon = ic['lat'], ic['lon']
+            break
+
+    if auto_lat is not None and auto_lon is not None:
+        st.info(f"Auto-filled location: {auto_lat}, {auto_lon}")
+        lat, lon = auto_lat, auto_lon
+    else:
+        lat = st.number_input("Latitude", value=47.0, format="%.6f")
+        lon = st.number_input("Longitude", value=20.0, format="%.6f")
+
     date = st.date_input("Date", datetime.today())
     info = st.text_area("Info")
-    lat = st.number_input("Latitude", value=47.0, format="%.6f")
-    lon = st.number_input("Longitude", value=20.0, format="%.6f")
     submitted = st.form_submit_button("Save")
     if submitted:
         new_row = {
@@ -172,6 +187,8 @@ with st.form("add_edit_form", clear_on_submit=True):
             "Interconnector": interconnector,
             "Date": date.strftime("%Y-%m-%d"),
             "Info": info,
+            "Lat": lat,
+            "Lon": lon
         }
         exists = not df.empty and (df['ID'] == id_val).any()
         if exists:
@@ -181,25 +198,7 @@ with st.form("add_edit_form", clear_on_submit=True):
         save_data(df)
         st.success("Information saved to Google Sheet!")
         st.rerun()
-
-# Find lat/lon based on country and interconnector selection
-auto_lat, auto_lon = None, None
-for ic in interconnectors_data:
-    if (
-        (country == ic['from'] or country == ic['to']) and
-        (interconnector == ic['name'])
-    ):
-        auto_lat, auto_lon = ic['lat'], ic['lon']
-        break
-
-if auto_lat is not None and auto_lon is not None:
-    st.info(f"Auto-filled location: {auto_lat}, {auto_lon}")
-    lat = auto_lat
-    lon = auto_lon
-else:
-    lat = st.number_input("Latitude", value=47.0, format="%.6f")
-    lon = st.number_input("Longitude", value=20.0, format="%.6f")
-
+        
 # --- Data Download ---
 st.header("Download Data")
 to_download = BytesIO()
