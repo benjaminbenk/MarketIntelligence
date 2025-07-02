@@ -6,10 +6,11 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 from io import BytesIO
+import numpy as np
 
 # --- Google Sheets Setup ---
 SHEET_NAME = "MarketIntelligenceGAS"  # Change this to your actual sheet name
-EXCEL_LINK = "https://docs.google.com/spreadsheets/d/12jH5gmwMopM9j5uTWOtc6wEafscgf5SvT8gDmoAFawE/edit?gid=0#gid=0"  # <-- CHANGE to your actual Google Sheet URL
+EXCEL_LINK = "https://docs.google.com/spreadsheets/d/12jH5gmwMopM9j5uTWOtc6wEafscgf5SvT8gDmoAFawE/edit?gid=0#gid=0"  # <-- your actual Google Sheet URL
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -47,7 +48,6 @@ st.markdown(
 # --- Load Data ---
 try:
     df = load_data()
-    st.write(df)
 except Exception as e:
     st.error(f"Could not load data from Google Sheets: {e}")
     st.stop()
@@ -90,17 +90,31 @@ else:
 # --- Map Visualization ---
 m = folium.Map(location=[47, 20], zoom_start=6, tiles="CartoDB Positron")
 
-# Draw markers for each interconnector
+# Draw markers for each interconnector with improved popups showing all previous entries for that country-interconnector
 for _, row in filtered_df.iterrows():
+    # Filter all history for this Country and Interconnector
+    history_entries = df[(df['Country'] == row['Country']) & (df['Interconnector'] == row['Interconnector'])]
+    history_entries = history_entries.sort_values(by='Date', ascending=False)
+    history_html = ""
+    for idx, hist_row in history_entries.iterrows():
+        history_html += f"""
+        <div style="margin-bottom: 0.5em; padding-bottom:0.5em; border-bottom:1px solid #ddd;">
+            <span style="color:#333;font-weight:bold;">{hist_row['Date']}:</span>
+            <span style="color:#444;">{hist_row['Info']}</span>
+        </div>
+        """
     popup_html = f"""
-    <b>{row['Country']} - {row['Interconnector']}</b><br>
-    Date: {row['Date']}<br>
-    Info: {row['Info']}
+    <div style="width:340px;max-height:340px;overflow:auto;">
+        <div style="font-size:1.2em;font-weight:bold;margin-bottom:0.5em;color:#1a237e">
+            {row['Country']} - {row['Interconnector']}
+        </div>
+        {history_html}
+    </div>
     """
     folium.Marker(
         location=[row["Lat"], row["Lon"]],
         tooltip=f"{row['Interconnector']} ({row['Country']})",
-        popup=folium.Popup(popup_html, max_width=250),
+        popup=folium.Popup(popup_html, max_width=400, min_width=340),
         icon=folium.Icon(color="blue", icon="info-sign")
     ).add_to(m)
 
@@ -116,18 +130,6 @@ for country, coords in middle_points.items():
     ).add_to(m)
 
 # --- Draw connection lines between countries for each interconnector ---
-def find_closest_midpoint(lat, lon, middle_points):
-    import numpy as np
-    min_dist = None
-    closest = None
-    for c, (clat, clon) in middle_points.items():
-        dist = np.sqrt((lat - clat)**2 + (lon - clon)**2)
-        if min_dist is None or dist < min_dist:
-            min_dist = dist
-            closest = c
-    return closest
-
-# We'll try to draw a line from each interconnector's marker to its country midpoint (if available)
 for _, row in filtered_df.iterrows():
     # Draw line from interconnector point to its country midpoint (if available)
     if row['Country'] in middle_points:
@@ -139,6 +141,23 @@ for _, row in filtered_df.iterrows():
         ).add_to(m)
 
 st_data = st_folium(m, width=1000, height=600)
+
+# --- Filtering and viewing previous entries (full table) ---
+st.header("View and Filter All Entries")
+with st.expander("Show/Hide Table"):
+    # Filter options for the big table
+    country_f = st.multiselect("Filter by Country", countries, default=countries)
+    interconnector_f = st.multiselect("Filter by Interconnector", interconnectors, default=interconnectors)
+    min_date_f = pd.to_datetime(df['Date']).min() if not df.empty else datetime(2000,1,1)
+    max_date_f = pd.to_datetime(df['Date']).max() if not df.empty else datetime.today()
+    date_range_f = st.date_input("Filter by Date Range", [min_date_f, max_date_f], key="table_filter")
+    show_df = df[
+        (df['Country'].isin(country_f)) &
+        (df['Interconnector'].isin(interconnector_f)) &
+        (pd.to_datetime(df['Date']) >= pd.to_datetime(date_range_f[0])) &
+        (pd.to_datetime(df['Date']) <= pd.to_datetime(date_range_f[1]))
+    ]
+    st.dataframe(show_df.sort_values(by="Date", ascending=False), use_container_width=True)
 
 # --- Editable Table / Add/Edit Info ---
 st.header("Add or Edit Interconnector Info")
@@ -169,18 +188,3 @@ with st.form("add_edit_form", clear_on_submit=True):
         save_data(df)
         st.success("Information saved to Google Sheet!")
         st.experimental_rerun()
-
-# --- Data Download ---
-st.header("Download Data")
-to_download = BytesIO()
-df.to_excel(to_download, index=False)
-to_download.seek(0)
-st.download_button("Download Excel", to_download, file_name="interconnectors_data.xlsx")
-
-# --- Data Import ---
-st.header("Import Data")
-uploaded = st.file_uploader("Import Excel file", type=["xlsx"])
-if uploaded:
-    df_new = pd.read_excel(uploaded)
-    save_data(df_new)
-    st.success("File imported and saved to Google Sheet! Please reload the page.")
