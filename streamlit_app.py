@@ -7,6 +7,27 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 from io import BytesIO
 
+# 1. Load credentials from Streamlit secrets
+gcp_secrets = st.secrets["gcp_service_account"]
+scopes = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+credentials = Credentials.from_service_account_info(gcp_secrets, scopes=scopes)
+
+# 2. Connect to Google Sheets
+gc = gspread.authorize(credentials)
+SHEET_NAME = "YOUR_GOOGLE_SHEET_NAME"  # Change this to your actual sheet name
+worksheet = gc.open(SHEET_NAME).sheet1  # or .worksheet('Sheet1') if you have multiple tabs
+
+# 3. Read data
+try:
+    data = worksheet.get_all_records()
+    df = pd.DataFrame(data)
+    st.write(df)
+except Exception as e:
+    st.error(f"Could not load data from Google Sheets: {e}")
+
 # --- Google Sheets Setup ---
 SHEET_NAME = "YOUR_SHEET_NAME_HERE"  # e.g., "Interconnectors"
 SCOPES = [
