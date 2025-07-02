@@ -128,7 +128,7 @@ for ic in interconnectors_data:
     from_mid = middle_points.get(ic["from"])
     to_mid = middle_points.get(ic["to"])
     if from_mid and to_mid:
-        folium.Line(
+        folium.PolyLine(
             locations=[from_mid, [ic["lat"], ic["lon"]], to_mid],
             color="green",
             weight=1,
