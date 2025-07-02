@@ -3,19 +3,22 @@ import pandas as pd
 import folium
 from streamlit_folium import st_folium
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials
 from datetime import datetime
 from io import BytesIO
 
 # --- Google Sheets Setup ---
-SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-CREDS_FILE = "static-lead-464709-p1-887234a0c606.json"  # path to your JSON credentials
-SHEET_NAME = "MarketIntelligenceGAS"        # name of your Google Sheet
+SHEET_NAME = "YOUR_SHEET_NAME_HERE"  # e.g., "Interconnectors"
+SCOPES = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
 
-@st.cache_resource
 def get_gs_client():
-    creds = ServiceAccountCredentials.from_json_keyfile_name(CREDS_FILE, SCOPE)
-    return gspread.authorize(creds)
+    # Pull credentials from Streamlit secrets
+    gcp_info = st.secrets["gcp_service_account"]
+    credentials = Credentials.from_service_account_info(gcp_info, scopes=SCOPES)
+    return gspread.authorize(credentials)
 
 def get_gs_sheet():
     gc = get_gs_client()
@@ -63,8 +66,9 @@ countries = sorted(middle_points.keys())
 interconnectors = sorted(df['Interconnector'].dropna().unique()) if not df.empty else []
 selected_country = st.sidebar.multiselect("Country", countries, default=countries)
 selected_interconnector = st.sidebar.multiselect("Interconnector", interconnectors, default=interconnectors)
-min_date, max_date = (df['Date'].min(), df['Date'].max()) if not df.empty else (None, None)
-date_range = st.sidebar.date_input("Date range", [min_date, max_date] if min_date and max_date else [datetime(2000,1,1), datetime.today()])
+min_date = pd.to_datetime(df['Date']).min() if not df.empty else datetime(2000,1,1)
+max_date = pd.to_datetime(df['Date']).max() if not df.empty else datetime.today()
+date_range = st.sidebar.date_input("Date range", [min_date, max_date])
 
 if not df.empty:
     filtered_df = df[
@@ -125,7 +129,6 @@ with st.form("add_edit_form", clear_on_submit=True):
             "Lat": lat,
             "Lon": lon
         }
-        # Update or add row
         exists = not df.empty and (df['ID'] == id_val).any()
         if exists:
             df.loc[df['ID'] == id_val, :] = pd.Series(new_row)
