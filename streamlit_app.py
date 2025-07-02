@@ -41,7 +41,7 @@ st.title("🗺️ CEE Gas Market Intelligence Map")
 
 # --- Button for Sheet Link ---
 st.markdown(
-    f'<a href="{EXCEL_LINK}" target="_blank"><button style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Go to Google Sheet</button></a>',
+    f'<a href="{EXCEL_LINK}" target="_blank"><button style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Open historical data</button></a>',
     unsafe_allow_html=True
 )
 
@@ -52,6 +52,28 @@ except Exception as e:
     st.error(f"Could not load data from Google Sheets: {e}")
     st.stop()
 
+# Define interconnector endpoints
+interconnectors_data = [
+    {"name": "Turkey-Bulgaria", "from": "Turkey", "to": "Bulgaria", "lat": 41.7, "lon": 27.0},
+    {"name": "Bulgaria-Romania", "from": "Bulgaria", "to": "Romania", "lat": 43.8, "lon": 28.6},
+    {"name": "Bulgaria-Serbia", "from": "Bulgaria", "to": "Serbia", "lat": 43.5, "lon": 22.5},
+    {"name": "Greece-Bulgaria", "from": "Greece", "to": "Bulgaria", "lat": 41.4, "lon": 23.3},
+    {"name": "Kiskundorozsma", "from": "Serbia", "to": "Hungary", "lat": 46.1, "lon": 19.9},
+    {"name": "Serbia-Romania", "from": "Serbia", "to": "Romania", "lat": 45.3, "lon": 21.0},
+    {"name": "Drávaszerdahely", "from": "Croatia", "to": "Hungary", "lat": 45.9, "lon": 17.8},
+    {"name": "Croatia-Slovenia", "from": "Croatia", "to": "Slovenia", "lat": 45.5, "lon": 15.6},
+    {"name": "HAG", "from": "Austria", "to": "Hungary", "lat": 47.8, "lon": 16.6},
+    {"name": "Austria-Slovakia", "from": "Austria", "to": "Slovakia", "lat": 48.2, "lon": 16.9},
+    {"name": "Balassagyarmat", "from": "Hungary", "to": "Slovakia", "lat": 47.9, "lon": 18.0},
+    {"name": "Csanádpalota", "from": "Hungary", "to": "Romania", "lat": 46.3, "lon": 21.3},
+    {"name": "Bereg", "from": "Hungary", "to": "Ukraine", "lat": 48.2, "lon": 22.6},
+    {"name": "Romania-Moldova", "from": "Romania", "to": "Moldova", "lat": 47.2, "lon": 27.0},
+    {"name": "Romania-Ukraine", "from": "Romania", "to": "Ukraine", "lat": 45.3, "lon": 28.3},
+    {"name": "Slovakia-Ukraine", "from": "Slovakia", "to": "Ukraine", "lat": 48.6, "lon": 21.9},
+]
+
+df = pd.DataFrame(interconnectors_data)
+
 # --- Country Midpoints renamed by gas point ---
 middle_points = {
     "Turkey": [39.0, 35.2],
@@ -59,10 +81,10 @@ middle_points = {
     "Romania": [45.9, 24.9],
     "Greece": [39.1, 22.9],
     "Serbia": [44.0, 20.5],
-    "Hungary-MGP": [47.2, 19.5],
+    "Hungary": [47.2, 19.5],
     "Croatia": [45.1, 15.6],
     "Slovenia": [46.1, 14.8],
-    "Austria-VTP": [47.5, 14.6],
+    "Austria": [47.5, 14.6],
     "Slovakia": [48.7, 19.7],
     "Ukraine": [48.4, 31.0],
     "Moldova": [47.0, 28.8]
@@ -90,33 +112,6 @@ else:
 # --- Map Visualization ---
 m = folium.Map(location=[47, 20], zoom_start=6, tiles="CartoDB Positron")
 
-# Draw markers for each interconnector with improved popups showing all previous entries for that country-interconnector
-for _, row in filtered_df.iterrows():
-    history_entries = df[(df['Country'] == row['Country']) & (df['Interconnector'] == row['Interconnector'])]
-    history_entries = history_entries.sort_values(by='Date', ascending=False)
-    history_html = ""
-    for idx, hist_row in history_entries.iterrows():
-        history_html += f"""
-        <div style="margin-bottom: 0.5em; padding-bottom:0.5em; border-bottom:1px solid #ddd;">
-            <span style="color:#333;font-weight:bold;">{hist_row['Date']}:</span>
-            <span style="color:#444;">{hist_row['Info']}</span>
-        </div>
-        """
-    popup_html = f"""
-    <div style="width:400px;max-height:400px;overflow:auto;">
-        <div style="font-size:1.2em;font-weight:bold;margin-bottom:0.5em;color:#1a237e">
-            {row['Country']} - {row['Interconnector']}
-        </div>
-        {history_html}
-    </div>
-    """
-    folium.Marker(
-        location=[row["Lat"], row["Lon"]],
-        tooltip=f"{row['Interconnector']} ({row['Country']})",
-        popup=folium.Popup(popup_html, max_width=460, min_width=340),
-        icon=folium.Icon(color="blue", icon="info-sign")
-    ).add_to(m)
-
 # Draw country midpoint circles
 for country, coords in middle_points.items():
     folium.CircleMarker(
@@ -128,64 +123,20 @@ for country, coords in middle_points.items():
         popup=country
     ).add_to(m)
 
-# Draw lines from each marker to its correct midpoint using the renamed gas point
+# Draw lines between connected midpoints (ENTSOG-style)
 for _, row in filtered_df.iterrows():
-    if all(pd.notnull([row.get("From Lat"), row.get("From Lon"), row.get("To Lat"), row.get("To Lon")])):
-        folium.PolyLine(
-            locations=[
-                [row["From Lat"], row["From Lon"]],
-                [row["To Lat"], row["To Lon"]]
-            ],
-            color="purple",
-            weight=3,
-            opacity=0.7,
-            tooltip=f"{row['From Node']} → {row['To Node']}"
-        ).add_to(m)
+    if pd.notna(row.get("From Node")) and pd.notna(row.get("To Node")):
+        from_node = row["From Node"]
+        to_node = row["To Node"]
+        from_coords = middle_points.get(from_node)
+        to_coords = middle_points.get(to_node)
+        if from_coords and to_coords:
+            folium.PolyLine(
+                locations=[from_coords, to_coords],
+                color="purple",
+                weight=3,
+                opacity=0.7,
+                tooltip=f"{from_node} → {to_node}"
+            ).add_to(m)
 
 st_data = st_folium(m, width=1000, height=600)
-
-# --- Filtering and viewing previous entries (full table) ---
-st.header("View and Filter All Entries")
-with st.expander("Show/Hide Table"):
-    country_f = st.multiselect("Filter by Country", countries, default=countries)
-    interconnector_f = st.multiselect("Filter by Interconnector", interconnectors, default=interconnectors)
-    min_date_f = pd.to_datetime(df['Date']).min() if not df.empty else datetime(2000,1,1)
-    max_date_f = pd.to_datetime(df['Date']).max() if not df.empty else datetime.today()
-    date_range_f = st.date_input("Filter by Date Range", [min_date_f, max_date_f], key="table_filter")
-    show_df = df[
-        (df['Country'].isin(country_f)) &
-        (df['Interconnector'].isin(interconnector_f)) &
-        (pd.to_datetime(df['Date']) >= pd.to_datetime(date_range_f[0])) &
-        (pd.to_datetime(df['Date']) <= pd.to_datetime(date_range_f[1]))
-    ]
-    st.dataframe(show_df.sort_values(by="Date", ascending=False), use_container_width=True)
-
-# --- Editable Table / Add/Edit Info ---
-st.header("Add or Edit Interconnector Info")
-with st.form("add_edit_form", clear_on_submit=True):
-    id_val = st.number_input("ID (for new, pick a new number)", value=int(df['ID'].max()+1) if not df.empty else 1, step=1)
-    country = st.selectbox("Country", countries)
-    interconnector = st.text_input("Interconnector")
-    date = st.date_input("Date", datetime.today())
-    info = st.text_area("Info")
-    lat = st.number_input("Latitude", value=47.0, format="%.6f")
-    lon = st.number_input("Longitude", value=20.0, format="%.6f")
-    submitted = st.form_submit_button("Save")
-    if submitted:
-        new_row = {
-            "ID": id_val,
-            "Country": country,
-            "Interconnector": interconnector,
-            "Date": date.strftime("%Y-%m-%d"),
-            "Info": info,
-            "Lat": lat,
-            "Lon": lon
-        }
-        exists = not df.empty and (df['ID'] == id_val).any()
-        if exists:
-            df.loc[df['ID'] == id_val, :] = pd.Series(new_row)
-        else:
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        save_data(df)
-        st.success("Information saved to Google Sheet!")
-        st.experimental_rerun()
