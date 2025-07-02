@@ -52,17 +52,17 @@ except Exception as e:
     st.error(f"Could not load data from Google Sheets: {e}")
     st.stop()
 
-# --- Country Midpoints ---
+# --- Country Midpoints renamed by gas point ---
 middle_points = {
     "Turkey": [39.0, 35.2],
     "Bulgaria": [42.8, 25.3],
     "Romania": [45.9, 24.9],
     "Greece": [39.1, 22.9],
     "Serbia": [44.0, 20.5],
-    "Hungary": [47.2, 19.5],
+    "Hungary-MGP": [47.2, 19.5],
     "Croatia": [45.1, 15.6],
     "Slovenia": [46.1, 14.8],
-    "Austria": [47.5, 14.6],
+    "Austria-VTP": [47.5, 14.6],
     "Slovakia": [48.7, 19.7],
     "Ukraine": [48.4, 31.0],
     "Moldova": [47.0, 28.8]
@@ -128,11 +128,13 @@ for country, coords in middle_points.items():
         popup=country
     ).add_to(m)
 
-# Draw lines from each marker to its country midpoint
+# Draw lines from each marker to its correct midpoint using the renamed gas point
 for _, row in filtered_df.iterrows():
-    if row['Country'] in middle_points:
+    matched_keys = [key for key in middle_points.keys() if key.startswith(row['Country'])]
+    if matched_keys:
+        point_key = matched_keys[0]
         folium.PolyLine(
-            locations=[middle_points[row['Country']], [row["Lat"], row["Lon"]]],
+            locations=[middle_points[point_key], [row["Lat"], row["Lon"]]],
             color="red",
             weight=2,
             opacity=0.6
