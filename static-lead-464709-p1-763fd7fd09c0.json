@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "static-lead-464709-p1",
+  "private_key_id": "763fd7fd09c0f8129abb564b8afe675abc28cbdc",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCRsKbYk9I4Z70e\nn+1MFiw+4YmXQqh2/7rpV2md9ApBPkokS8+TYYGNNWajFRa0E5nX7cOMPq19ftdl\nGV+YDA3cSu5h7AD9I1Nw7Dzzwb5sMZk3cmEZJiBQqfg+jciAB8WNtk2SxAbgcCwe\n1BlXeg5Ws2aXaRe29sy7tVPwIHet5qREQb/g1xsLNhUwmJ6FypKDCVf8VV+q6fgb\n2m9ptYbvhGOh7ZgLiBkp/KXjnK5kDNLtRf9husseZZOJcbsL3/ihHkKpurPTIoTu\n2wIJP9gVeecZuip00mlovXtwgag6QTyihctJYn7JK9ohLwDR7xPcsbwqNAiEudD+\nEXzp4YIVAgMBAAECggEAMuiD/LT2pdAWJR/kJwyubFCaKBlaTa7BrOznEpMmjDLM\nbI9zGsBdKS8qTL0/QDCDNxE1ngl+zRXoBUNPBI3dwAcM8nmpxMq1ywU5rUGbnSnd\nrKLSrBuG+jjSbmVT1O0iSokT5T+LWZzIxgL+UfNsFD6/EBRgfYYS91p+2K83srOY\n5e0kqqiHgICw+oY/pTrZtYomC8Bxk/GwKAlHdwjoVwrY3KH6K+2A24Qsre0ju+IE\nd8/GJfYISbWzSz6HzqSxcJqMGTK8phpfzx4FaIXu2IdmZY/KBC5lNKVgIYxmR3ax\n1oZMtS2KSqOn3HY/xHGdPs8OWHTzQA1NoZU1MmThxwKBgQDB0LF8t+ckxwQkxUOB\nZAEaQMaDOQ9BKE9j2uNiPpCe6uQPiCRQmeyPUqnHZ7VGhepCF27qWk04QYFamD4T\nGsOh96gvgnveAFNTcUOXTn6WPiIgnK2A/tvibqlTMhD5Es5NBOqP2docnWEp3ZGp\nASOgKvWroQOYSqGYMTiBtkYmXwKBgQDAbyAFRrziX5S58rur+CKFTkNZlyEDWNHy\nUiF8cy6G7kiK4fSfF5l748bKfsSJiyhYzES2iaGKhr9xtAFj1rNm+V4ODwGOB4oa\nkB9KDxnHJ4JES4lYAb/Nf3JKbfSOiTDpISa8P8p6e6GcruKWZ01AnRbw3cDk4KzC\nEN3kJlekCwKBgQCBm7+1OX4XOAdrV4dHFcsu9TZLNnMfDYfZrNz2LASmYUnVoSM3\ny1dImOz0bkPpP1Bili0UBwMwpY2NOdX5DKLawzTzYHzY/rq6SDn9Cv7YFgDYci4M\n32HH0FznR8nV5l+TXcBGJlcXX59EUelAbYSXbWMQPQKcavwZPIEfLPdIXQKBgETO\nNwvL7DOg62PFZ9coZOd3QVuiTvqMYp0bQr/ly0gRoTyPaFEONiH3Ipg61Xk8mZOO\nji8abPlEDuXP8ANLvF/gYAH02aB4D6hJyfZICfaMqOZUf+pIzdTjcfEs+ZmRcjyZ\nTulWgcZjuDh2y6vtidDFmnNLRvJPZ1YIg95U21dbAoGBAKFVr35rxAHzXUiw8kXn\nlyNgBm7y+9VpiBRFVIqFYG/xz5TIMYW98Abhk0RH2vmpk47ispJh18h+rxjzynLP\nhecSJIr1ZIxEOkeIDYtxL0ssI90Ire9ZfWFn0zYjGP0JUtlrkGLt3br9POpaQ+ee\nHuh79SG2wIksdCK8UxfJ5v8Y\n-----END PRIVATE KEY-----\n",
+  "client_email": "marketintelgas@static-lead-464709-p1.iam.gserviceaccount.com",
+  "client_id": "117609164786586381083",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/marketintelgas%40static-lead-464709-p1.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
