@@ -191,10 +191,3 @@ df.to_excel(to_download, index=False)
 to_download.seek(0)
 st.download_button("Download Excel", to_download, file_name="interconnectors_data.xlsx")
 
-# --- Data Import ---
-st.header("Import Data")
-uploaded = st.file_uploader("Import Excel file", type=["xlsx"])
-if uploaded:
-    df_new = pd.read_excel(uploaded)
-    save_data(df_new)
-    st.success("File imported and saved to Google Sheet! Please reload the page.")
