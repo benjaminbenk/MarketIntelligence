@@ -29,7 +29,7 @@ except Exception as e:
     st.error(f"Could not load data from Google Sheets: {e}")
 
 # --- Google Sheets Setup ---
-SHEET_NAME = "YOUR_SHEET_NAME_HERE"  # e.g., "Interconnectors"
+SHEET_NAME = "Data"  # e.g., "Interconnectors"
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -56,8 +56,8 @@ def save_data(df):
     sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
 # --- App UI ---
-st.set_page_config(page_title="Gas Interconnector Map", layout="wide")
-st.title("🗺️ CEE Gas Interconnector Market Intelligence Map")
+st.set_page_config(page_title="Gas Map", layout="wide")
+st.title("🗺️ CEE Gas Market Intelligence Map")
 
 # --- Load Data ---
 try:
@@ -173,3 +173,4 @@ if uploaded:
     df_new = pd.read_excel(uploaded)
     save_data(df_new)
     st.success("File imported and saved to Google Sheet! Please reload the page.")
+m
