@@ -9,7 +9,7 @@ from io import BytesIO
 
 # --- Google Sheets Setup ---
 SCOPE = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-CREDS_FILE = "static-lead-464709-p1-763fd7fd09c0.json"  # path to your JSON credentials
+CREDS_FILE = "static-lead-464709-p1-887234a0c606.json"  # path to your JSON credentials
 SHEET_NAME = "MarketIntelligenceGAS"        # name of your Google Sheet
 
 @st.cache_resource
