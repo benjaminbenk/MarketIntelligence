@@ -56,7 +56,7 @@ interconnectors_data = [
 
 # --- App UI ---
 st.set_page_config(page_title="Gas Map", layout="wide")
-st.title("🗺️ CEE Gas Market Intelligence Map")
+st.title("CEE Gas Market Intelligence Map")
 
 # --- Button for Sheet Link ---
 st.markdown(
@@ -119,8 +119,8 @@ for _, row in filtered_df.iterrows():
     folium.Marker(
         location=[row["Lat"], row["Lon"]],
         tooltip=f"{row['Interconnector']} ({row['Country']})",
-        popup=folium.Popup(popup_html, max_width=250),
-        icon=folium.Icon(color="red", icon="landmark")
+        popup=folium.Popup(popup_html, max_width=100),
+        icon=folium.Icon(color="red", icon="triangle")
     ).add_to(m)
 
 # Draw static interconnector lines and markers
@@ -138,7 +138,7 @@ for ic in interconnectors_data:
     folium.Marker(
         location=[ic["lat"], ic["lon"]],
         tooltip=f"{ic['name']} ({ic['from']} → {ic['to']})",
-        icon=folium.Icon(color="grey", icon="pipe-valve")
+        icon=folium.Icon(color="grey", icon="pipe")
     ).add_to(m)
 
 # Draw country midpoint circles
