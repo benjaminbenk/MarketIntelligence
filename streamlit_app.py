@@ -9,6 +9,7 @@ from io import BytesIO
 
 # --- Google Sheets Setup ---
 SHEET_NAME = "MarketIntelligenceGAS"  # Change this to your actual sheet name
+EXCEL_LINK = "https://docs.google.com/spreadsheets/d/12jH5gmwMopM9j5uTWOtc6wEafscgf5SvT8gDmoAFawE/edit?gid=0#gid=0"  # <-- CHANGE to your actual Google Sheet URL
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -36,6 +37,12 @@ def save_data(df):
 # --- App UI ---
 st.set_page_config(page_title="Gas Map", layout="wide")
 st.title("🗺️ CEE Gas Market Intelligence Map")
+
+# --- Button for Sheet Link ---
+st.markdown(
+    f'<a href="{EXCEL_LINK}" target="_blank"><button style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Go to Google Sheet</button></a>',
+    unsafe_allow_html=True
+)
 
 # --- Load Data ---
 try:
@@ -120,7 +127,7 @@ def find_closest_midpoint(lat, lon, middle_points):
             closest = c
     return closest
 
-# We'll try to draw a line from each interconnector's marker to its country midpoint and also between pairs
+# We'll try to draw a line from each interconnector's marker to its country midpoint (if available)
 for _, row in filtered_df.iterrows():
     # Draw line from interconnector point to its country midpoint (if available)
     if row['Country'] in middle_points:
@@ -130,10 +137,6 @@ for _, row in filtered_df.iterrows():
             weight=2,
             opacity=0.6
         ).add_to(m)
-
-    # Optionally, try to connect points if your data contains "CountryFrom" and "CountryTo"
-    # Or connect to other nearby interconnectors
-    # (If you want more advanced logic, you can ask for it)
 
 st_data = st_folium(m, width=1000, height=600)
 
