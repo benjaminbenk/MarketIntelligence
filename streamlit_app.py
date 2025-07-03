@@ -60,7 +60,7 @@ st.title("CEE Gas Market Intelligence Map")
 
 # --- Button for Sheet Link ---
 st.markdown(
-    f'<a href="{EXCEL_LINK}" target="_blank"><button style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Go to Google Sheet</button></a>',
+    f'<a href="{EXCEL_LINK}" target="_blank"><button style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Go to data</button></a>',
     unsafe_allow_html=True
 )
 
@@ -152,7 +152,7 @@ for country, coords in middle_points.items():
         popup=country
     ).add_to(m)
 
-st_data = st_folium(m, width=1000, height=600)
+st_data = st_folium(m, width=1000, height=1000)
 
 # --- Editable Table / Add/Edit Info ---
 st.header("Add or Edit Interconnector Info")
