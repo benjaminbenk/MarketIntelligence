@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import folium
+from folium.plugins import MarkerCluster
 from streamlit_folium import st_folium
 import gspread
 from google.oauth2.service_account import Credentials
@@ -56,11 +57,11 @@ interconnectors_data = [
 
 # --- App UI ---
 st.set_page_config(page_title="Gas Map", layout="wide")
-st.title("CEE Gas Market Intelligence Map")
+st.title("🗺️ CEE Gas Market Intelligence Map")
 
 # --- Button for Sheet Link ---
 st.markdown(
-    f'<a href="{EXCEL_LINK}" target="_blank"><button style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Go to data</button></a>',
+    f'<a href="{EXCEL_LINK}" target="_blank"><button style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Go to Google Sheet</button></a>',
     unsafe_allow_html=True
 )
 
@@ -96,6 +97,15 @@ min_date = pd.to_datetime(df['Date']).min() if not df.empty else datetime(2000,1
 max_date = pd.to_datetime(df['Date']).max() if not df.empty else datetime.today()
 date_range = st.sidebar.date_input("Date range", [min_date, max_date])
 
+# Interconnector selection for highlight
+interconnector_labels = [
+    f"{ic['name']} ({ic['from']} → {ic['to']})" for ic in interconnectors_data
+]
+selected_ic_label = st.sidebar.selectbox("Highlight Static Interconnector", ["None"] + interconnector_labels)
+highlight_ic = None
+if selected_ic_label != "None":
+    highlight_ic = next(ic for ic in interconnectors_data if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
+
 if not df.empty:
     filtered_df = df[
         (df['Country'].isin(selected_country)) &
@@ -109,37 +119,62 @@ else:
 # --- Map Visualization ---
 m = folium.Map(location=[47, 20], zoom_start=5, tiles="CartoDB Positron")
 
-# Draw markers for each interconnector entry from Google Sheet
+# --- Marker Clusters for dynamic (Google Sheet) points ---
+dynamic_cluster = MarkerCluster(name="Dynamic Entries").add_to(m)
+
+# Draw dynamic markers (from Google Sheet)
 for _, row in filtered_df.iterrows():
     popup_html = f"""
-    <b>{row['Country']} - {row['Interconnector']}</b><br>
-    Date: {row['Date']}<br>
-    Info: {row['Info']}
+    <table style='font-size:90%;'>
+      <tr><th>Country</th><td>{row['Country']}</td></tr>
+      <tr><th>Interconnector</th><td>{row['Interconnector']}</td></tr>
+      <tr><th>Date</th><td>{row['Date']}</td></tr>
+      <tr><th>Info</th><td>{row['Info']}</td></tr>
+      <tr><th>Lat/Lon</th><td>{row['Lat']:.4f}, {row['Lon']:.4f}</td></tr>
+    </table>
     """
     folium.Marker(
         location=[row["Lat"], row["Lon"]],
         tooltip=f"{row['Interconnector']} ({row['Country']})",
-        popup=folium.Popup(popup_html, max_width=100),
-        icon=folium.Icon(color="red", icon="triangle")
-    ).add_to(m)
+        popup=folium.Popup(popup_html, max_width=320),
+        icon=folium.Icon(color="red", icon="landmark")
+    ).add_to(dynamic_cluster)
 
-# Draw static interconnector lines and markers
+# --- Static Interconnector lines and markers ---
+static_cluster = MarkerCluster(name="Static Interconnectors").add_to(m)
 for ic in interconnectors_data:
     from_mid = middle_points.get(ic["from"])
     to_mid = middle_points.get(ic["to"])
+    is_highlight = (highlight_ic is not None and ic['name'] == highlight_ic['name'])
+    # Highlight the selected interconnector in blue, others in grey
+    line_color = "blue" if is_highlight else "grey"
+    marker_color = "blue" if is_highlight else "grey"
+    marker_icon = "star" if is_highlight else "pipe-valve"
+    marker_opacity = 1 if is_highlight else 0.7
     if from_mid and to_mid:
         folium.PolyLine(
             locations=[from_mid, [ic["lat"], ic["lon"]], to_mid],
-            color="grey",
-            weight=1,
-            opacity=1,
-            dash_array="10,10"
+            color=line_color,
+            weight=6 if is_highlight else 2,
+            opacity=0.8 if is_highlight else 0.5,
+            dash_array=None if is_highlight else "10,10"
         ).add_to(m)
+    # Improved popup as HTML table
+    popup_html = f"""
+    <table style='font-size:90%;'>
+      <tr><th>Name</th><td>{ic['name']}</td></tr>
+      <tr><th>From</th><td>{ic['from']}</td></tr>
+      <tr><th>To</th><td>{ic['to']}</td></tr>
+      <tr><th>Lat/Lon</th><td>{ic['lat']:.4f}, {ic['lon']:.4f}</td></tr>
+    </table>
+    """
     folium.Marker(
         location=[ic["lat"], ic["lon"]],
         tooltip=f"{ic['name']} ({ic['from']} → {ic['to']})",
-        icon=folium.Icon(color="grey", icon="pipe")
-    ).add_to(m)
+        popup=folium.Popup(popup_html, max_width=320),
+        icon=folium.Icon(color=marker_color, icon=marker_icon),
+        opacity=marker_opacity
+    ).add_to(static_cluster)
 
 # Draw country midpoint circles
 for country, coords in middle_points.items():
@@ -152,8 +187,31 @@ for country, coords in middle_points.items():
         popup=country
     ).add_to(m)
 
-st_data = st_folium(m, width=1000, height=1000)
+# --- Add Legend ---
+legend_html = """
+<div style="
+     position: fixed;
+     bottom: 50px;
+     left: 50px;
+     width: 230px;
+     height: 120px;
+     z-index:9999;
+     font-size:14px;
+     background: rgba(255,255,255,0.92);
+     border:2px solid #444;
+     border-radius: 8px;
+     padding: 10px 18px;">
+<b>Legend</b><br>
+<i class="fa fa-landmark fa-2x" style="color:red"></i> Dynamic (user) entry<br>
+<i class="fa fa-pipe-valve fa-2x" style="color:grey"></i> Static interconnector<br>
+<i class="fa fa-star fa-2x" style="color:blue"></i> Highlighted interconnector<br>
+<span style="display:inline-block;width:22px;height:5px;background:blue;margin:0 6px 0 4px;vertical-align:middle"></span> Highlighted line<br>
+<span style="display:inline-block;width:22px;height:5px;background:grey;margin:0 6px 0 4px;vertical-align:middle"></span> Static line<br>
+</div>
+"""
+m.get_root().html.add_child(folium.Element(legend_html))
 
+st_data = st_folium(m, width=1000, height=600)
 
 # --- Editable Table / Add/Edit Info ---
 st.header("Add or Edit Interconnector Info")
