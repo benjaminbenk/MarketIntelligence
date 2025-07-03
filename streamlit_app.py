@@ -212,28 +212,6 @@ for country, coords in middle_points.items():
         fill_opacity=0.8,
         popup=country
     ).add_to(m)
-legend_html = """
-<div style="
-     position: fixed;
-     bottom: 50px;
-     left: 50px;
-     width: 230px;
-     height: 120px;
-     z-index:9999;
-     font-size:14px;
-     background: rgba(255,255,255,0.92);
-     border:2px solid #444;
-     border-radius: 8px;
-     padding: 10px 18px;">
-<b>Legend</b><br>
-<i class="fa fa-landmark fa-2x" style="color:red"></i> Dynamic (user) entry<br>
-<i class="fa fa-pipe-valve fa-2x" style="color:grey"></i> Static interconnector<br>
-<i class="fa fa-star fa-2x" style="color:blue"></i> Highlighted interconnector<br>
-<span style="display:inline-block;width:22px;height:5px;background:blue;margin:0 6px 0 4px;vertical-align:middle"></span> Highlighted line<br>
-<span style="display:inline-block;width:22px;height:5px;background:grey;margin:0 6px 0 4px;vertical-align:middle"></span> Static line<br>
-</div>
-"""
-m.get_root().html.add_child(folium.Element(legend_html))
 st_data = st_folium(m, width=None, height=400)
 
 # --- Editable Table / Add/Edit/Delete/Comment Info ---
