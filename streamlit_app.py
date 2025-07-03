@@ -26,14 +26,16 @@ def get_gs_sheet():
     return gc.open(SHEET_NAME).sheet1
 
 def load_data():
-    sheet = get_gs_sheet()
-    df = pd.DataFrame(sheet.get_all_records())
-    return df
+    with st.spinner("Loading data from Google Sheets..."):
+        sheet = get_gs_sheet()
+        df = pd.DataFrame(sheet.get_all_records())
+        return df
 
 def save_data(df):
-    sheet = get_gs_sheet()
-    sheet.clear()
-    sheet.update([df.columns.values.tolist()] + df.values.tolist())
+    with st.spinner("Saving data to Google Sheets..."):
+        sheet = get_gs_sheet()
+        sheet.clear()
+        sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
 # --- Interconnector endpoints (static for lines on map) ---
 interconnectors_data = [
@@ -211,7 +213,7 @@ legend_html = """
 """
 m.get_root().html.add_child(folium.Element(legend_html))
 
-st_data = st_folium(m, width=1000, height=600)
+st_data = st_folium(m, width=2000, height=600)
 
 # --- Editable Table / Add/Edit Info ---
 st.header("Add or Edit Interconnector Info")
@@ -275,11 +277,12 @@ with st.form("add_edit_form", clear_on_submit=True):
             "Lon": lon
         }
         exists = not df.empty and (df['ID'] == new_row["ID"]).any()
-        if exists:
-            df.loc[df['ID'] == new_row["ID"], :] = pd.Series(new_row)
-        else:
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        save_data(df)
+        with st.spinner("Saving data to Google Sheets..."):
+            if exists:
+                df.loc[df['ID'] == new_row["ID"], :] = pd.Series(new_row)
+            else:
+                df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            save_data(df)
         st.success("Information saved to Google Sheet!")
         st.rerun()
         
@@ -289,4 +292,3 @@ to_download = BytesIO()
 df.to_excel(to_download, index=False)
 to_download.seek(0)
 st.download_button("Download Excel", to_download, file_name="interconnectors_data.xlsx")
-
