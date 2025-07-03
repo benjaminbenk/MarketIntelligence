@@ -154,45 +154,71 @@ for country, coords in middle_points.items():
 
 st_data = st_folium(m, width=1000, height=1000)
 
+
 # --- Editable Table / Add/Edit Info ---
 st.header("Add or Edit Interconnector Info")
 with st.form("add_edit_form", clear_on_submit=True):
-    id_val = st.number_input("ID (for new, pick a new number)", value=int(df['ID'].max()+1) if not df.empty else 1, step=1)
-    country = st.selectbox("Country", countries)
-    # Use dropdown for interconnector name, but allow manual input if needed
-    interconnector_names = [ic['name'] for ic in interconnectors_data if country in (ic['from'], ic['to'])]
-    interconnector = st.selectbox("Interconnector", interconnector_names) if interconnector_names else st.text_input("Interconnector")
-
-    # Try to deduce lat/lon from the selected interconnector (and country)
-    auto_lat, auto_lon = None, None
-    for ic in interconnectors_data:
-        if (country == ic['from'] or country == ic['to']) and (interconnector == ic['name']):
-            auto_lat, auto_lon = ic['lat'], ic['lon']
-            break
-
-    if auto_lat is not None and auto_lon is not None:
-        st.info(f"Auto-filled location: {auto_lat}, {auto_lon}")
-        lat, lon = auto_lat, auto_lon
+    # --- Validate unique ID: provide 'Auto' mode ---
+    id_mode = st.radio("ID assignment", ["Auto", "Manual"], horizontal=True)
+    if id_mode == "Manual":
+        id_val = st.number_input(
+            "ID (choose a unique number)", 
+            value=int(df['ID'].max()+1) if not df.empty else 1, 
+            step=1, 
+            min_value=1
+        )
+        # Check for duplicate ID warning
+        if not df.empty and (df['ID'] == id_val).any():
+            st.warning("This ID already exists! Please choose a unique number or select Auto.")
     else:
+        id_val = int(df['ID'].max()+1) if not df.empty else 1
+
+    # --- Interconnector dropdown: combine with country info ---
+    interconnector_labels = [
+        f"{ic['name']} ({ic['from']} → {ic['to']})" for ic in interconnectors_data
+    ]
+    selected_ic_label = st.selectbox("Interconnector", ["Custom/Other"] + interconnector_labels)
+
+    if selected_ic_label != "Custom/Other":
+        # Find the selected interconnector details
+        selected_ic = next(ic for ic in interconnectors_data if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
+        country_from = selected_ic["from"]
+        country_to = selected_ic["to"]
+        interconnector = selected_ic["name"]
+        lat, lon = selected_ic["lat"], selected_ic["lon"]
+        st.text_input("From Country", value=country_from, disabled=True)
+        st.text_input("To Country", value=country_to, disabled=True)
+        st.text_input("Latitude", value=str(lat), disabled=True)
+        st.text_input("Longitude", value=str(lon), disabled=True)
+    else:
+        # Restrict country options to known ones (no typos)
+        country_from = st.selectbox("From Country", countries)
+        country_to = st.selectbox("To Country", countries)
+        interconnector = st.text_input("Interconnector")
         lat = st.number_input("Latitude", value=47.0, format="%.6f")
         lon = st.number_input("Longitude", value=20.0, format="%.6f")
 
     date = st.date_input("Date", datetime.today())
     info = st.text_area("Info")
+
     submitted = st.form_submit_button("Save")
     if submitted:
+        # Prevent duplicate ID on save (for manual mode)
+        if id_mode == "Manual" and not df.empty and (df['ID'] == id_val).any():
+            st.error("Duplicate ID! Entry not saved.")
+            st.stop()
         new_row = {
             "ID": id_val,
-            "Country": country,
+            "Country": country_from,
             "Interconnector": interconnector,
             "Date": date.strftime("%Y-%m-%d"),
             "Info": info,
             "Lat": lat,
             "Lon": lon
         }
-        exists = not df.empty and (df['ID'] == id_val).any()
+        exists = not df.empty and (df['ID'] == new_row["ID"]).any()
         if exists:
-            df.loc[df['ID'] == id_val, :] = pd.Series(new_row)
+            df.loc[df['ID'] == new_row["ID"], :] = pd.Series(new_row)
         else:
             df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
         save_data(df)
