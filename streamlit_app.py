@@ -84,7 +84,8 @@ interconnectors_data = [
     {"name": "Romania-Ukraine", "from": "Romania", "to": "Ukraine", "lat": 45.18, "lon": 28.29},
     {"name": "Slovakia-Ukraine", "from": "Slovakia", "to": "Ukraine", "lat": 48.65, "lon": 22.18},
     {"name": "Moldova-Ukraine", "from": "Moldova", "to": "Ukraine", "lat": 47.3, "lon": 29.5},
-    {"name": "Ukraine-Poland", "from": "Ukraine", "to": "Poland", "lat": 49.8, "lon": 23.0}
+    {"name": "Ukraine-Poland", "from": "Ukraine", "to": "Poland", "lat": 49.8, "lon": 23.0},
+    {"name": "Poland-Slovakia", "from": "Poland", "to": "Slovakia", "lat": 49.4, "lon": 21.8},
 ]
 
 # --- App UI ---
@@ -254,9 +255,11 @@ if action_mode == "Add New":
         interconnector_labels = [
             f"{ic['name']} ({ic['from']} → {ic['to']})" for ic in filtered_ics
         ]
+        if len(interconnector_labels) == 0:
+            st.info("No static interconnectors for this country. Use Custom/Other.")
         selected_ic_label = st.selectbox("Interconnector", ["Custom/Other"] + interconnector_labels)
 
-        if selected_ic_label != "Custom/Other":
+        if selected_ic_label != "Custom/Other" and interconnector_labels:
             selected_ic = next(ic for ic in filtered_ics if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
             interconnector = selected_ic["name"]
         else:
