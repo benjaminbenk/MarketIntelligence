@@ -234,10 +234,12 @@ if action_mode == "Add New":
                 st.warning("This ID already exists! Please choose a unique number or select Auto.")
         else:
             id_val = int(df['ID'].max()+1) if not df.empty else 1
-                country_from = st.selectbox("From Country", countries)
+
+        # --- From / To Countries ---
+        country_from = st.selectbox("From Country", countries)
         country_to = st.selectbox("To Country", countries)
 
-        # Filter interconnectors that match the selected countries
+        # --- Filter interconnectors between selected countries ---
         filtered_ics = [
             ic for ic in interconnectors_data
             if (ic['from'] == country_from and ic['to'] == country_to) or
@@ -252,37 +254,22 @@ if action_mode == "Add New":
         if selected_ic_label != "Custom/Other":
             selected_ic = next(ic for ic in filtered_ics if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
             interconnector = selected_ic["name"]
-            st.text_input("From Country", value=selected_ic["from"], disabled=True)
-            st.text_input("To Country", value=selected_ic["to"], disabled=True)
+            lat, lon = selected_ic["lat"], selected_ic["lon"]
         else:
             interconnector = st.text_input("Interconnector")
+            lat, lon = float('nan'), float('nan')
 
-        if selected_ic_label != "Custom/Other":
-            selected_ic = next(ic for ic in interconnectors_data if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
-            country_from = selected_ic["from"]
-            country_to = selected_ic["to"]
-            interconnector = selected_ic["name"]
-            # lat, lon = selected_ic["lat"], selected_ic["lon"]  # <- not needed in the form
-            st.text_input("From Country", value=country_from, disabled=True)
-            st.text_input("To Country", value=country_to, disabled=True)
-        else:
-            country_from = st.selectbox("From Country", countries)
-            country_to = st.selectbox("To Country", countries)
-            interconnector = st.text_input("Interconnector")
-            # No latitude/longitude input here!
+        # --- Other fields ---
         date = st.date_input("Date", datetime.today())
         info = st.text_area("Info")
         comments = st.text_area("Comments/Annotations")
+
         submitted = st.form_submit_button("Save")
         if submitted:
             if id_mode == "Manual" and not df.empty and (df['ID'] == id_val).any():
                 st.error("Duplicate ID! Entry not saved.")
                 st.stop()
-            # Use static lat/lon if known, else NaN
-            if selected_ic_label != "Custom/Other":
-                lat, lon = selected_ic["lat"], selected_ic["lon"]
-            else:
-                lat, lon = float('nan'), float('nan')
+
             new_row = {
                 "ID": id_val,
                 "Country": country_from,
@@ -294,6 +281,7 @@ if action_mode == "Add New":
                 "Comments": comments,
                 "Created By": username
             }
+
             exists = not df.empty and (df['ID'] == new_row["ID"]).any()
             with st.spinner("Saving data to Google Sheets..."):
                 if exists:
@@ -306,6 +294,7 @@ if action_mode == "Add New":
                 save_data(df)
             st.success("Information saved to Google Sheet!")
             st.rerun()
+
 elif action_mode == "Edit Existing":
     if df.empty:
         st.info("No data to edit.")
