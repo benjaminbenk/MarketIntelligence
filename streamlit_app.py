@@ -82,9 +82,10 @@ interconnectors_data = [
     {"name": "Bereg", "from": "Hungary", "to": "Ukraine", "lat": 48.2, "lon": 22.6},
     {"name": "Romania-Moldova", "from": "Romania", "to": "Moldova", "lat": 47.21, "lon": 27.54},
     {"name": "Romania-Ukraine", "from": "Romania", "to": "Ukraine", "lat": 45.18, "lon": 28.29},
-    {"name": "Slovakia-Ukraine", "from": "Slovakia", "to": "Ukraine", "lat": 48.65, "lon": 22.18}
+    {"name": "Slovakia-Ukraine", "from": "Slovakia", "to": "Ukraine", "lat": 48.65, "lon": 22.18},
+    {"name": "Moldova-Ukraine", "from": "Moldova", "to": "Ukraine", "lat": 47.3, "lon": 29.5},
+    {"name": "Ukraine-Poland", "from": "Ukraine", "to": "Poland", "lat": 49.8, "lon": 23.0}
 ]
-
 
 # --- App UI ---
 st.set_page_config(page_title="Gas Map", layout="centered")
@@ -116,9 +117,9 @@ middle_points = {
     "Austria": [48.2082, 16.3738],      # Vienna
     "Slovakia": [48.1486, 17.1077],     # Bratislava
     "Ukraine": [50.4501, 30.5234],      # Kyiv
-    "Moldova": [47.0105, 28.8638]       # Chișinău
+    "Moldova": [47.0105, 28.8638],      # Chișinău
+    "Poland": [52.2297, 21.0122]        # Warsaw
 }
-
 
 # --- Filtering & Search ---
 countries = sorted(middle_points.keys())
@@ -156,6 +157,13 @@ if not df.empty:
 m = folium.Map(location=[47, 20], zoom_start=5, tiles="CartoDB Positron")
 dynamic_cluster = MarkerCluster(name="Dynamic Entries").add_to(m)
 for _, row in filtered_df.iterrows():
+    # Try to match to a static interconnector for lat/lon
+    static_ic = next((ic for ic in interconnectors_data if ic["name"] == row["Interconnector"]), None)
+    if static_ic:
+        lat, lon = static_ic["lat"], static_ic["lon"]
+    else:
+        # fallback: use country capital
+        lat, lon = middle_points.get(row["Country"], [47, 20])
     popup_html = f"""
     <table style='font-size:90%;'>
       <tr><th>Country</th><td>{row['Country']}</td></tr>
@@ -164,11 +172,10 @@ for _, row in filtered_df.iterrows():
       <tr><th>Info</th><td>{row['Info']}</td></tr>
       <tr><th>Comment</th><td>{row.get('Comments','')}</td></tr>
       <tr><th>Created By</th><td>{row.get('Created By','')}</td></tr>
-      <tr><th>Lat/Lon</th><td>{row['Lat']:.4f}, {row['Lon']:.4f}</td></tr>
     </table>
     """
     folium.Marker(
-        location=[row["Lat"], row["Lon"]],
+        location=[lat, lon],
         tooltip=f"{row['Interconnector']} ({row['Country']})",
         popup=folium.Popup(popup_html, max_width=320),
         icon=folium.Icon(color="red", icon="landmark")
@@ -252,10 +259,8 @@ if action_mode == "Add New":
         if selected_ic_label != "Custom/Other":
             selected_ic = next(ic for ic in filtered_ics if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
             interconnector = selected_ic["name"]
-            lat, lon = selected_ic["lat"], selected_ic["lon"]
         else:
             interconnector = st.text_input("Custom Interconnector Name")
-            lat, lon = float('nan'), float('nan')
 
         date = st.date_input("Date", datetime.today())
         info = st.text_area("Info")
@@ -273,8 +278,6 @@ if action_mode == "Add New":
                 "Interconnector": interconnector,
                 "Date": date.strftime("%Y-%m-%d"),
                 "Info": info,
-                "Lat": lat,
-                "Lon": lon,
                 "Comments": comments,
                 "Created By": username
             }
