@@ -241,17 +241,14 @@ if action_mode == "Add New":
             country_from = selected_ic["from"]
             country_to = selected_ic["to"]
             interconnector = selected_ic["name"]
-            lat, lon = selected_ic["lat"], selected_ic["lon"]
+            # lat, lon = selected_ic["lat"], selected_ic["lon"]  # <- not needed in the form
             st.text_input("From Country", value=country_from, disabled=True)
             st.text_input("To Country", value=country_to, disabled=True)
-            st.text_input("Latitude", value=str(lat), disabled=True)
-            st.text_input("Longitude", value=str(lon), disabled=True)
         else:
             country_from = st.selectbox("From Country", countries)
             country_to = st.selectbox("To Country", countries)
             interconnector = st.text_input("Interconnector")
-            lat = st.number_input("Latitude", value=47.0, format="%.6f")
-            lon = st.number_input("Longitude", value=20.0, format="%.6f")
+            # No latitude/longitude input here!
         date = st.date_input("Date", datetime.today())
         info = st.text_area("Info")
         comments = st.text_area("Comments/Annotations")
@@ -260,6 +257,11 @@ if action_mode == "Add New":
             if id_mode == "Manual" and not df.empty and (df['ID'] == id_val).any():
                 st.error("Duplicate ID! Entry not saved.")
                 st.stop()
+            # Use static lat/lon if known, else NaN
+            if selected_ic_label != "Custom/Other":
+                lat, lon = selected_ic["lat"], selected_ic["lon"]
+            else:
+                lat, lon = float('nan'), float('nan')
             new_row = {
                 "ID": id_val,
                 "Country": country_from,
