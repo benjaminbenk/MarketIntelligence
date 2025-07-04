@@ -234,10 +234,29 @@ if action_mode == "Add New":
                 st.warning("This ID already exists! Please choose a unique number or select Auto.")
         else:
             id_val = int(df['ID'].max()+1) if not df.empty else 1
-        interconnector_labels = [
-            f"{ic['name']} ({ic['from']} → {ic['to']})" for ic in interconnectors_data
+                country_from = st.selectbox("From Country", countries)
+        country_to = st.selectbox("To Country", countries)
+
+        # Filter interconnectors that match the selected countries
+        filtered_ics = [
+            ic for ic in interconnectors_data
+            if (ic['from'] == country_from and ic['to'] == country_to) or
+               (ic['from'] == country_to and ic['to'] == country_from)
         ]
+        interconnector_labels = [
+            f"{ic['name']} ({ic['from']} → {ic['to']})" for ic in filtered_ics
+        ]
+
         selected_ic_label = st.selectbox("Interconnector", ["Custom/Other"] + interconnector_labels)
+
+        if selected_ic_label != "Custom/Other":
+            selected_ic = next(ic for ic in filtered_ics if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
+            interconnector = selected_ic["name"]
+            st.text_input("From Country", value=selected_ic["from"], disabled=True)
+            st.text_input("To Country", value=selected_ic["to"], disabled=True)
+        else:
+            interconnector = st.text_input("Interconnector")
+
         if selected_ic_label != "Custom/Other":
             selected_ic = next(ic for ic in interconnectors_data if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
             country_from = selected_ic["from"]
