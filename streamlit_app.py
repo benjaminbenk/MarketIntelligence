@@ -221,7 +221,7 @@ for country, coords in middle_points.items():
         fill_opacity=0.8,
         popup=country
     ).add_to(m)
-st_data = st_folium(m, width=None, height=None)
+st_data = st_folium(m, width=None, height=1000)
 
 # --- Editable Table / Add/Edit/Delete/Comment Info ---
 st.header("Add, Edit, Delete or Comment on Interconnector Info")
@@ -243,76 +243,20 @@ if action_mode == "Add New":
         else:
             id_val = int(df['ID'].max()+1) if not df.empty else 1
 
-        country_interconnector_map = {
-            "Austria": [
-                "Mosonmagyaróvár (Austria → Hungary)",
-                "Austria-Slovakia (Austria → Slovakia)"
-            ],
-            "Bulgaria": [
-                "Turkey-Bulgaria",
-                "Bulgaria-Romania",
-                "Bulgaria-Serbia",
-                "Greece-Bulgaria"
-            ],
-            "Croatia": [
-                "Drávaszerdahely (Croatia → Hungary)",
-                "Croatia-Slovenia"
-            ],
-            "Czechia": [],
-            "Greece": [
-                "Greece-Bulgaria"
-            ],
-            "Hungary": [
-                "Mosonmagyaróvár (Austria → Hungary)",
-                "Drávaszerdahely (Croatia → Hungary)",
-                "Kiskundorozsma (Serbia → Hungary)",
-                "Balassagyarmat (Hungary → Slovakia)",
-                "Csanádpalota (Hungary → Romania)",
-                "Bereg (Hungary → Ukraine)"
-            ],
-            "Moldova": [
-                "Romania-Moldova",
-                "Moldova-Ukraine"
-            ],
-            "Romania": [
-                "Bulgaria-Romania",
-                "Serbia-Romania",
-                "Csanádpalota (Hungary → Romania)",
-                "Romania-Moldova",
-                "Romania-Ukraine"
-            ],
-            "Serbia": [
-                "Bulgaria-Serbia",
-                "Kiskundorozsma (Serbia → Hungary)",
-                "Serbia-Romania"
-            ],
-            "Slovakia": [
-                "Austria-Slovakia (Austria → Slovakia)",
-                "Balassagyarmat (Hungary → Slovakia)",
-                "Slovakia-Ukraine",
-                "Poland-Slovakia (Poland → Slovakia)"
-            ],
-            "Slovenia": [
-                "Croatia-Slovenia"
-            ],
-            "Turkey": [
-                "Turkey-Bulgaria"
-            ],
-            "Ukraine": [
-                "Bereg (Hungary → Ukraine)",
-                "Romania-Ukraine",
-                "Slovakia-Ukraine",
-                "Moldova-Ukraine",
-                "Ukraine-Poland"
-            ],
-            "Poland": [
-                "Ukraine-Poland",
-                "Poland-Slovakia (Poland → Slovakia)"
-            ]
-        }
+      # Generate dynamic mapping from interconnectors_data
+interconnector_labels = {
+    f"{ic['name']} ({ic['from']} → {ic['to']})": {ic['from'], ic['to']}
+    for ic in interconnectors_data
+}
 
-        selected_country = st.selectbox("Select Country (to see related interconnectors)", list(country_interconnector_map.keys()))
-        related_ics = country_interconnector_map.get(selected_country, [])
+country_interconnector_map = defaultdict(list)
+for label, countries in interconnector_labels.items():
+    for country in countries:
+        country_interconnector_map[country].append(label)
+
+selected_country = st.selectbox("Select Country (to see related interconnectors)", sorted(country_interconnector_map.keys()))
+related_ics = country_interconnector_map.get(selected_country, [])
+
 
         # Only show the dropdown if there are interconnectors, else show a message and no dropdown.
         if related_ics:
