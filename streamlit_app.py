@@ -221,12 +221,7 @@ for country, coords in middle_points.items():
         fill_opacity=0.8,
         popup=country
     ).add_to(m)
-st_data = st_folium(m, width=None, height=1000)
-
-# --- Editable Table / Add/Edit/Delete/Comment Info ---
-st.header("Add, Edit, Delete or Comment on Interconnector Info")
-username = st.session_state.get("username", "benjaminbenk")
-action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete", "Add Comment/Annotation"])
+st_data = st_folium(m, width=None, height=400)
 
 # --- Editable Table / Add/Edit/Delete/Comment Info ---
 st.header("Add, Edit, Delete or Comment on Interconnector Info")
