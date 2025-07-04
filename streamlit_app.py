@@ -228,6 +228,11 @@ st.header("Add, Edit, Delete or Comment on Interconnector Info")
 username = st.session_state.get("username", "benjaminbenk")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete", "Add Comment/Annotation"])
 
+# --- Editable Table / Add/Edit/Delete/Comment Info ---
+st.header("Add, Edit, Delete or Comment on Interconnector Info")
+username = st.session_state.get("username", "benjaminbenk")
+action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete", "Add Comment/Annotation"])
+
 if action_mode == "Add New":
     with st.form("add_edit_form", clear_on_submit=True):
         id_mode = st.radio("ID assignment", ["Auto", "Manual"], horizontal=True)
@@ -243,20 +248,76 @@ if action_mode == "Add New":
         else:
             id_val = int(df['ID'].max()+1) if not df.empty else 1
 
-      # Generate dynamic mapping from interconnectors_data
-interconnector_labels = {
-    f"{ic['name']} ({ic['from']} → {ic['to']})": {ic['from'], ic['to']}
-    for ic in interconnectors_data
-}
+        country_interconnector_map = {
+            "Austria": [
+                "Mosonmagyaróvár (Austria → Hungary)",
+                "Austria-Slovakia (Austria → Slovakia)"
+            ],
+            "Bulgaria": [
+                "Turkey-Bulgaria",
+                "Bulgaria-Romania",
+                "Bulgaria-Serbia",
+                "Greece-Bulgaria"
+            ],
+            "Croatia": [
+                "Drávaszerdahely (Croatia → Hungary)",
+                "Croatia-Slovenia"
+            ],
+            "Czechia": [],
+            "Greece": [
+                "Greece-Bulgaria"
+            ],
+            "Hungary": [
+                "Mosonmagyaróvár (Austria → Hungary)",
+                "Drávaszerdahely (Croatia → Hungary)",
+                "Kiskundorozsma (Serbia → Hungary)",
+                "Balassagyarmat (Hungary → Slovakia)",
+                "Csanádpalota (Hungary → Romania)",
+                "Bereg (Hungary → Ukraine)"
+            ],
+            "Moldova": [
+                "Romania-Moldova",
+                "Moldova-Ukraine"
+            ],
+            "Romania": [
+                "Bulgaria-Romania",
+                "Serbia-Romania",
+                "Csanádpalota (Hungary → Romania)",
+                "Romania-Moldova",
+                "Romania-Ukraine"
+            ],
+            "Serbia": [
+                "Bulgaria-Serbia",
+                "Kiskundorozsma (Serbia → Hungary)",
+                "Serbia-Romania"
+            ],
+            "Slovakia": [
+                "Austria-Slovakia (Austria → Slovakia)",
+                "Balassagyarmat (Hungary → Slovakia)",
+                "Slovakia-Ukraine",
+                "Poland-Slovakia (Poland → Slovakia)"
+            ],
+            "Slovenia": [
+                "Croatia-Slovenia"
+            ],
+            "Turkey": [
+                "Turkey-Bulgaria"
+            ],
+            "Ukraine": [
+                "Bereg (Hungary → Ukraine)",
+                "Romania-Ukraine",
+                "Slovakia-Ukraine",
+                "Moldova-Ukraine",
+                "Ukraine-Poland"
+            ],
+            "Poland": [
+                "Ukraine-Poland",
+                "Poland-Slovakia (Poland → Slovakia)"
+            ]
+        }
 
-country_interconnector_map = defaultdict(list)
-for label, countries in interconnector_labels.items():
-    for country in countries:
-        country_interconnector_map[country].append(label)
-
-selected_country = st.selectbox("Select Country (to see related interconnectors)", sorted(country_interconnector_map.keys()))
-related_ics = country_interconnector_map.get(selected_country, [])
-
+        selected_country = st.selectbox("Select Country (to see related interconnectors)", list(country_interconnector_map.keys()))
+        related_ics = country_interconnector_map.get(selected_country, [])
 
         # Only show the dropdown if there are interconnectors, else show a message and no dropdown.
         if related_ics:
@@ -299,6 +360,53 @@ related_ics = country_interconnector_map.get(selected_country, [])
                     append_history("create", new_row, username=username)
                 save_data(df)
             st.success("Information saved to Google Sheet!")
+            st.rerun()
+
+elif action_mode == "Edit Existing":
+    if df.empty:
+        st.info("No data to edit.")
+    else:
+        editable_row = st.selectbox("Select entry to edit (by ID)", df["ID"])
+        row = df[df["ID"] == editable_row].iloc[0]
+        with st.form("edit_existing_form"):
+            info = st.text_area("Info", value=row["Info"])
+            comments = st.text_area("Comments/Annotations", value=row["Comments"])
+            submitted = st.form_submit_button("Update")
+            if submitted:
+                updated_row = row.copy()
+                updated_row["Info"] = info
+                updated_row["Comments"] = comments
+                df.loc[df["ID"] == editable_row, ["Info", "Comments"]] = info, comments
+                append_history("edit", updated_row.to_dict(), old_data=row.to_dict(), username=username)
+                save_data(df)
+                st.success("Entry updated.")
+                st.rerun()
+elif action_mode == "Delete":
+    if df.empty:
+        st.info("No data to delete.")
+    else:
+        delete_row_id = st.selectbox("Select entry to delete (by ID)", df["ID"])
+        row = df[df["ID"] == delete_row_id].iloc[0]
+        st.warning(f"Are you sure you want to delete entry ID {delete_row_id}? This action cannot be undone.")
+        if st.button("Confirm Delete"):
+            append_history("delete", {}, old_data=row.to_dict(), username=username)
+            df = df[df["ID"] != delete_row_id]
+            save_data(df)
+            st.success(f"Entry {delete_row_id} deleted.")
+            st.rerun()
+elif action_mode == "Add Comment/Annotation":
+    if df.empty:
+        st.info("No entries to comment on.")
+    else:
+        comment_row_id = st.selectbox("Select entry to comment/annotate (by ID)", df["ID"])
+        row = df[df["ID"] == comment_row_id].iloc[0]
+        new_comment = st.text_area("Add your comment/annotation here")
+        if st.button("Add Comment"):
+            updated_comments = (row["Comments"] or "") + f"\n[{datetime.utcnow().isoformat()} by {username}]: {new_comment}"
+            df.loc[df["ID"] == comment_row_id, "Comments"] = updated_comments
+            append_history("comment", row.to_dict(), comment=new_comment, username=username)
+            save_data(df)
+            st.success("Comment/annotation added.")
             st.rerun()
 
 elif action_mode == "Edit Existing":
