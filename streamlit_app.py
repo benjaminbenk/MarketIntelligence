@@ -229,83 +229,14 @@ st.header("Add, Edit, Delete or Comment on Interconnector Info")
 username = st.session_state.get("username", "benjaminbenk")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete", "Add Comment/Annotation"])
 
-# Country-to-interconnectors mapping for Add New (exact to your list)
-country_interconnector_map = {
-    "Austria": [
-        "Mosonmagyaróvár (Austria → Hungary)",
-        "Austria-Slovakia (Austria → Slovakia)"
-    ],
-    "Bulgaria": [
-        "Turkey-Bulgaria",
-        "Bulgaria-Romania",
-        "Bulgaria-Serbia",
-        "Greece-Bulgaria"
-    ],
-    "Croatia": [
-        "Drávaszerdahely (Croatia → Hungary)",
-        "Croatia-Slovenia"
-    ],
-    "Czechia": [],
-    "Greece": [
-        "Greece-Bulgaria"
-    ],
-    "Hungary": [
-        "Mosonmagyaróvár (Austria → Hungary)",
-        "Drávaszerdahely (Croatia → Hungary)",
-        "Kiskundorozsma (Serbia → Hungary)",
-        "Balassagyarmat (Hungary → Slovakia)",
-        "Csanádpalota (Hungary → Romania)",
-        "Bereg (Hungary → Ukraine)"
-    ],
-    "Moldova": [
-        "Romania-Moldova",
-        "Moldova-Ukraine"
-    ],
-    "Romania": [
-        "Bulgaria-Romania",
-        "Serbia-Romania",
-        "Csanádpalota (Hungary → Romania)",
-        "Romania-Moldova",
-        "Romania-Ukraine"
-    ],
-    "Serbia": [
-        "Bulgaria-Serbia",
-        "Kiskundorozsma (Serbia → Hungary)",
-        "Serbia-Romania"
-    ],
-    "Slovakia": [
-        "Austria-Slovakia (Austria → Slovakia)",
-        "Balassagyarmat (Hungary → Slovakia)",
-        "Slovakia-Ukraine",
-        "Poland-Slovakia (Poland → Slovakia)"
-    ],
-    "Slovenia": [
-        "Croatia-Slovenia"
-    ],
-    "Turkey": [
-        "Turkey-Bulgaria"
-    ],
-    "Ukraine": [
-        "Bereg (Hungary → Ukraine)",
-        "Romania-Ukraine",
-        "Slovakia-Ukraine",
-        "Moldova-Ukraine",
-        "Ukraine-Poland"
-    ],
-    "Poland": [
-        "Ukraine-Poland",
-        "Poland-Slovakia (Poland → Slovakia)"
-    ]
-}
-
 if action_mode == "Add New":
     with st.form("add_edit_form", clear_on_submit=True):
         id_mode = st.radio("ID assignment", ["Auto", "Manual"], horizontal=True)
         if id_mode == "Manual":
             id_val = st.number_input(
-                "ID (choose a unique number)", 
-                value=int(df['ID'].max()+1) if not df.empty else 1, 
-                step=1, 
+                "ID (choose a unique number)",
+                value=int(df['ID'].max()+1) if not df.empty else 1,
+                step=1,
                 min_value=1
             )
             if not df.empty and (df['ID'] == id_val).any():
@@ -313,20 +244,87 @@ if action_mode == "Add New":
         else:
             id_val = int(df['ID'].max()+1) if not df.empty else 1
 
-        selected_country = st.selectbox("Select Country (to see related interconnectors)", countries)
+        # --- Use ONLY your mapping for the dropdown!
+        country_interconnector_map = {
+            "Austria": [
+                "Mosonmagyaróvár (Austria → Hungary)",
+                "Austria-Slovakia (Austria → Slovakia)"
+            ],
+            "Bulgaria": [
+                "Turkey-Bulgaria",
+                "Bulgaria-Romania",
+                "Bulgaria-Serbia",
+                "Greece-Bulgaria"
+            ],
+            "Croatia": [
+                "Drávaszerdahely (Croatia → Hungary)",
+                "Croatia-Slovenia"
+            ],
+            "Czechia": [],
+            "Greece": [
+                "Greece-Bulgaria"
+            ],
+            "Hungary": [
+                "Mosonmagyaróvár (Austria → Hungary)",
+                "Drávaszerdahely (Croatia → Hungary)",
+                "Kiskundorozsma (Serbia → Hungary)",
+                "Balassagyarmat (Hungary → Slovakia)",
+                "Csanádpalota (Hungary → Romania)",
+                "Bereg (Hungary → Ukraine)"
+            ],
+            "Moldova": [
+                "Romania-Moldova",
+                "Moldova-Ukraine"
+            ],
+            "Romania": [
+                "Bulgaria-Romania",
+                "Serbia-Romania",
+                "Csanádpalota (Hungary → Romania)",
+                "Romania-Moldova",
+                "Romania-Ukraine"
+            ],
+            "Serbia": [
+                "Bulgaria-Serbia",
+                "Kiskundorozsma (Serbia → Hungary)",
+                "Serbia-Romania"
+            ],
+            "Slovakia": [
+                "Austria-Slovakia (Austria → Slovakia)",
+                "Balassagyarmat (Hungary → Slovakia)",
+                "Slovakia-Ukraine",
+                "Poland-Slovakia (Poland → Slovakia)"
+            ],
+            "Slovenia": [
+                "Croatia-Slovenia"
+            ],
+            "Turkey": [
+                "Turkey-Bulgaria"
+            ],
+            "Ukraine": [
+                "Bereg (Hungary → Ukraine)",
+                "Romania-Ukraine",
+                "Slovakia-Ukraine",
+                "Moldova-Ukraine",
+                "Ukraine-Poland"
+            ],
+            "Poland": [
+                "Ukraine-Poland",
+                "Poland-Slovakia (Poland → Slovakia)"
+            ]
+        }
+
+        selected_country = st.selectbox("Select Country (to see related interconnectors)", list(country_interconnector_map.keys()))
         related_ics = country_interconnector_map.get(selected_country, [])
         interconnector_labels = ["Custom/Other"] + related_ics
         selected_ic_label = st.selectbox("Interconnector", interconnector_labels)
 
-        # Extract the static name for the GoogleSheet if needed
         if selected_ic_label != "Custom/Other" and related_ics:
+            # static name before bracket (if present)
             if "(" in selected_ic_label:
-                # Extract static name before the bracket
                 name_part = selected_ic_label.split(" (")[0]
             else:
                 name_part = selected_ic_label
-            selected_ic = next((ic for ic in interconnectors_data if ic["name"] == name_part), None)
-            interconnector = selected_ic["name"] if selected_ic else selected_ic_label
+            interconnector = name_part
         else:
             interconnector = st.text_input("Custom Interconnector Name")
 
@@ -362,7 +360,6 @@ if action_mode == "Add New":
                 save_data(df)
             st.success("Information saved to Google Sheet!")
             st.rerun()
-
 
 elif action_mode == "Edit Existing":
     if df.empty:
