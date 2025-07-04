@@ -244,7 +244,6 @@ if action_mode == "Add New":
         else:
             id_val = int(df['ID'].max()+1) if not df.empty else 1
 
-        # --- Use ONLY your mapping for the dropdown!
         country_interconnector_map = {
             "Austria": [
                 "Mosonmagyaróvár (Austria → Hungary)",
@@ -315,18 +314,13 @@ if action_mode == "Add New":
 
         selected_country = st.selectbox("Select Country (to see related interconnectors)", list(country_interconnector_map.keys()))
         related_ics = country_interconnector_map.get(selected_country, [])
-        interconnector_labels = ["Custom/Other"] + related_ics
-        selected_ic_label = st.selectbox("Interconnector", interconnector_labels)
 
-        if selected_ic_label != "Custom/Other" and related_ics:
-            # static name before bracket (if present)
-            if "(" in selected_ic_label:
-                name_part = selected_ic_label.split(" (")[0]
-            else:
-                name_part = selected_ic_label
-            interconnector = name_part
+        # Only show the dropdown if there are interconnectors, else show a message and no dropdown.
+        if related_ics:
+            interconnector = st.selectbox("Interconnector", related_ics)
         else:
-            interconnector = st.text_input("Custom Interconnector Name")
+            st.info("No interconnectors available for this country.")
+            interconnector = None
 
         date = st.date_input("Date", datetime.today())
         info = st.text_area("Info")
@@ -334,6 +328,9 @@ if action_mode == "Add New":
 
         submitted = st.form_submit_button("Save")
         if submitted:
+            if not interconnector:
+                st.error("No interconnector selected. Cannot save.")
+                st.stop()
             if id_mode == "Manual" and not df.empty and (df['ID'] == id_val).any():
                 st.error("Duplicate ID! Entry not saved.")
                 st.stop()
