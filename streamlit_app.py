@@ -235,31 +235,31 @@ if action_mode == "Add New":
         else:
             id_val = int(df['ID'].max()+1) if not df.empty else 1
 
-        # --- From / To Countries ---
-        country_from = st.selectbox("From Country", countries)
-        country_to = st.selectbox("To Country", countries)
+        # --- Select 1 country of interest ---
+        selected_country = st.selectbox("Select Country (to see related interconnectors)", countries)
 
-        # --- Filter interconnectors between selected countries ---
+        # --- Filter all interconnectors that involve the selected country ---
         filtered_ics = [
             ic for ic in interconnectors_data
-            if (ic['from'] == country_from and ic['to'] == country_to) or
-               (ic['from'] == country_to and ic['to'] == country_from)
+            if selected_country in (ic['from'], ic['to'])
         ]
         interconnector_labels = [
             f"{ic['name']} ({ic['from']} → {ic['to']})" for ic in filtered_ics
         ]
-
         selected_ic_label = st.selectbox("Interconnector", ["Custom/Other"] + interconnector_labels)
 
         if selected_ic_label != "Custom/Other":
             selected_ic = next(ic for ic in filtered_ics if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
             interconnector = selected_ic["name"]
+            country_from = selected_ic["from"]
+            country_to = selected_ic["to"]
             lat, lon = selected_ic["lat"], selected_ic["lon"]
         else:
-            interconnector = st.text_input("Interconnector")
+            country_from = st.selectbox("From Country", countries)
+            country_to = st.selectbox("To Country", [c for c in countries if c != country_from])
+            interconnector = st.text_input("Custom Interconnector Name")
             lat, lon = float('nan'), float('nan')
 
-        # --- Other fields ---
         date = st.date_input("Date", datetime.today())
         info = st.text_area("Info")
         comments = st.text_area("Comments/Annotations")
@@ -270,9 +270,14 @@ if action_mode == "Add New":
                 st.error("Duplicate ID! Entry not saved.")
                 st.stop()
 
+            # Prevent user from entering same country for both directions
+            if selected_ic_label == "Custom/Other" and country_from == country_to:
+                st.error("From Country and To Country cannot be the same.")
+                st.stop()
+
             new_row = {
                 "ID": id_val,
-                "Country": country_from,
+                "Country": selected_country,
                 "Interconnector": interconnector,
                 "Date": date.strftime("%Y-%m-%d"),
                 "Info": info,
