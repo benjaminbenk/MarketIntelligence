@@ -229,6 +229,7 @@ st.header("Add, Edit, Delete or Comment on Interconnector Info")
 username = st.session_state.get("username", "benjaminbenk")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete", "Add Comment/Annotation"])
 
+# Country-to-interconnectors mapping for Add New (exact to your list)
 country_interconnector_map = {
     "Austria": [
         "Mosonmagyaróvár (Austria → Hungary)",
@@ -317,9 +318,13 @@ if action_mode == "Add New":
         interconnector_labels = ["Custom/Other"] + related_ics
         selected_ic_label = st.selectbox("Interconnector", interconnector_labels)
 
+        # Extract the static name for the GoogleSheet if needed
         if selected_ic_label != "Custom/Other" and related_ics:
-            # extract just the name from the label (handles e.g. Mosonmagyaróvár (Austria → Hungary))
-            name_part = selected_ic_label.split(" (")[0]
+            if "(" in selected_ic_label:
+                # Extract static name before the bracket
+                name_part = selected_ic_label.split(" (")[0]
+            else:
+                name_part = selected_ic_label
             selected_ic = next((ic for ic in interconnectors_data if ic["name"] == name_part), None)
             interconnector = selected_ic["name"] if selected_ic else selected_ic_label
         else:
