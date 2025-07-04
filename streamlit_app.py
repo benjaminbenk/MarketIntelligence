@@ -203,7 +203,6 @@ for ic in interconnectors_data:
       <tr><th>Name</th><td>{ic['name']}</td></tr>
       <tr><th>From</th><td>{ic['from']}</td></tr>
       <tr><th>To</th><td>{ic['to']}</td></tr>
-      <tr><th>Lat/Lon</th><td>{ic['lat']:.4f}, {ic['lon']:.4f}</td></tr>
     </table>
     """
     folium.Marker(
@@ -222,7 +221,7 @@ for country, coords in middle_points.items():
         fill_opacity=0.8,
         popup=country
     ).add_to(m)
-st_data = st_folium(m, width=None, height=400)
+st_data = st_folium(m, width=None, height=None)
 
 # --- Editable Table / Add/Edit/Delete/Comment Info ---
 st.header("Add, Edit, Delete or Comment on Interconnector Info")
