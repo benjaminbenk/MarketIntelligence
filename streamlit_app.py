@@ -1,8 +1,5 @@
 import streamlit as st
 import pandas as pd
-import folium
-from folium.plugins import MarkerCluster
-from streamlit_folium import st_folium
 import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
@@ -65,32 +62,9 @@ def get_history_for_interconnector(interconnector):
     except Exception:
         return []
 
-# --- Interconnector endpoints (static for lines on map) ---
-interconnectors_data = [
-    {"name": "Turkey-Bulgaria", "from": "Turkey", "to": "Bulgaria", "lat": 41.88, "lon": 26.3},
-    {"name": "Bulgaria-Romania", "from": "Bulgaria", "to": "Romania", "lat": 44.03, "lon": 27.23},
-    {"name": "Bulgaria-Serbia", "from": "Bulgaria", "to": "Serbia", "lat": 43.87, "lon": 22.63},
-    {"name": "Greece-Bulgaria", "from": "Greece", "to": "Bulgaria", "lat": 41.3, "lon": 23.15},
-    {"name": "Kiskundorozsma", "from": "Serbia", "to": "Hungary", "lat": 46.22, "lon": 19.91},
-    {"name": "Serbia-Romania", "from": "Serbia", "to": "Romania", "lat": 45.16, "lon": 21.3},
-    {"name": "Drávaszerdahely", "from": "Croatia", "to": "Hungary", "lat": 45.78, "lon": 17.77},
-    {"name": "Croatia-Slovenia", "from": "Croatia", "to": "Slovenia", "lat": 45.7, "lon": 15.63},
-    {"name": "Mosonmagyaróvár", "from": "Austria", "to": "Hungary", "lat": 47.95, "lon": 16.68},
-    {"name": "Austria-Slovakia", "from": "Austria", "to": "Slovakia", "lat": 48.12, "lon": 17.02},
-    {"name": "Balassagyarmat", "from": "Hungary", "to": "Slovakia", "lat": 48.07, "lon": 19.31},
-    {"name": "Csanádpalota", "from": "Hungary", "to": "Romania", "lat": 46.3, "lon": 21.3},
-    {"name": "Bereg", "from": "Hungary", "to": "Ukraine", "lat": 48.2, "lon": 22.6},
-    {"name": "Romania-Moldova", "from": "Romania", "to": "Moldova", "lat": 47.21, "lon": 27.54},
-    {"name": "Romania-Ukraine", "from": "Romania", "to": "Ukraine", "lat": 45.18, "lon": 28.29},
-    {"name": "Slovakia-Ukraine", "from": "Slovakia", "to": "Ukraine", "lat": 48.65, "lon": 22.18},
-    {"name": "Moldova-Ukraine", "from": "Moldova", "to": "Ukraine", "lat": 47.3, "lon": 29.5},
-    {"name": "Ukraine-Poland", "from": "Ukraine", "to": "Poland", "lat": 49.8, "lon": 23.0},
-    {"name": "Poland-Slovakia", "from": "Poland", "to": "Slovakia", "lat": 49.4, "lon": 21.8},
-]
-
 # --- App UI ---
-st.set_page_config(page_title="Gas Map", layout="centered")
-st.title("🗺️ CEE Gas Market Intelligence Map")
+st.set_page_config(page_title="Gas Market Intelligence", layout="wide")
+st.title("📄 CEE Gas Market Intelligence (Text View)")
 
 # --- Button for Sheet Link & Backup ---
 st.markdown(
@@ -105,25 +79,8 @@ except Exception as e:
     st.error(f"Could not load data from Google Sheets: {e}")
     st.stop()
 
-# --- Country Midpoints ---
-middle_points = {
-    "Turkey": [39.9208, 32.8541],       # Ankara
-    "Bulgaria": [42.6975, 23.3242],     # Sofia
-    "Romania": [44.4268, 26.1025],      # Bucharest
-    "Greece": [37.9838, 23.7275],       # Athens
-    "Serbia": [44.7866, 20.4489],       # Belgrade
-    "Hungary": [47.4979, 19.0402],      # Budapest
-    "Croatia": [45.8150, 15.9819],      # Zagreb
-    "Slovenia": [46.0569, 14.5058],     # Ljubljana
-    "Austria": [48.2082, 16.3738],      # Vienna
-    "Slovakia": [48.1486, 17.1077],     # Bratislava
-    "Ukraine": [50.4501, 30.5234],      # Kyiv
-    "Moldova": [47.0105, 28.8638],      # Chișinău
-    "Poland": [52.2297, 21.0122]        # Warsaw
-}
-
 # --- Filtering & Search ---
-countries = sorted(middle_points.keys())
+countries = sorted(df['Country'].dropna().unique()) if not df.empty else []
 interconnectors = sorted(df['Interconnector'].dropna().unique()) if not df.empty else []
 search_query = st.sidebar.text_input("🔍 Search info/comments")
 selected_country = st.sidebar.multiselect("Country", countries, default=countries)
@@ -131,14 +88,6 @@ selected_interconnector = st.sidebar.multiselect("Interconnector", interconnecto
 min_date = pd.to_datetime(df['Date']).min() if not df.empty else datetime(2000,1,1)
 max_date = pd.to_datetime(df['Date']).max() if not df.empty else datetime.today()
 date_range = st.sidebar.date_input("Date range", [min_date, max_date])
-
-interconnector_labels = [
-    f"{ic['name']} ({ic['from']} → {ic['to']})" for ic in interconnectors_data
-]
-selected_ic_label = st.sidebar.selectbox("Highlight Static Interconnector", ["None"] + interconnector_labels)
-highlight_ic = None
-if selected_ic_label != "None":
-    highlight_ic = next(ic for ic in interconnectors_data if f"{ic['name']} ({ic['from']} → {ic['to']})" == selected_ic_label)
 
 filtered_df = df.copy()
 if not df.empty:
@@ -154,74 +103,12 @@ if not df.empty:
             filtered_df["Comments"].str.contains(search_query, case=False, na=False)
         ]
 
-# --- Map Visualization (mobile/tablet optimized) ---
-m = folium.Map(location=[47, 20], zoom_start=5, tiles="CartoDB Positron")
-dynamic_cluster = MarkerCluster(name="Dynamic Entries").add_to(m)
-for _, row in filtered_df.iterrows():
-    # Try to match to a static interconnector for lat/lon
-    static_ic = next((ic for ic in interconnectors_data if ic["name"] == row["Interconnector"]), None)
-    if static_ic:
-        lat, lon = static_ic["lat"], static_ic["lon"]
-    else:
-        # fallback: use country capital
-        lat, lon = middle_points.get(row["Country"], [47, 20])
-    popup_html = f"""
-    <table style='font-size:90%;'>
-      <tr><th>Country</th><td>{row['Country']}</td></tr>
-      <tr><th>Interconnector</th><td>{row['Interconnector']}</td></tr>
-      <tr><th>Date</th><td>{row['Date']}</td></tr>
-      <tr><th>Info</th><td>{row['Info']}</td></tr>
-      <tr><th>Comment</th><td>{row.get('Comments','')}</td></tr>
-      <tr><th>Created By</th><td>{row.get('Created By','')}</td></tr>
-    </table>
-    """
-    folium.Marker(
-        location=[lat, lon],
-        tooltip=f"{row['Interconnector']} ({row['Country']})",
-        popup=folium.Popup(popup_html, max_width=320),
-        icon=folium.Icon(color="red", icon="landmark")
-    ).add_to(dynamic_cluster)
-static_cluster = MarkerCluster(name="Static Interconnectors").add_to(m)
-for ic in interconnectors_data:
-    from_mid = middle_points.get(ic["from"])
-    to_mid = middle_points.get(ic["to"])
-    is_highlight = (highlight_ic is not None and ic['name'] == highlight_ic['name'])
-    line_color = "blue" if is_highlight else "grey"
-    marker_color = "blue" if is_highlight else "grey"
-    marker_icon = "star" if is_highlight else "pipe-valve"
-    marker_opacity = 1 if is_highlight else 0.7
-    if from_mid and to_mid:
-        folium.PolyLine(
-            locations=[from_mid, [ic["lat"], ic["lon"]], to_mid],
-            color=line_color,
-            weight=6 if is_highlight else 2,
-            opacity=0.8 if is_highlight else 0.5,
-            dash_array=None if is_highlight else "10,10"
-        ).add_to(m)
-    popup_html = f"""
-    <table style='font-size:90%;'>
-      <tr><th>Name</th><td>{ic['name']}</td></tr>
-      <tr><th>From</th><td>{ic['from']}</td></tr>
-      <tr><th>To</th><td>{ic['to']}</td></tr>
-    </table>
-    """
-    folium.Marker(
-        location=[ic["lat"], ic["lon"]],
-        tooltip=f"{ic['name']} ({ic['from']} → {ic['to']})",
-        popup=folium.Popup(popup_html, max_width=320),
-        icon=folium.Icon(color=marker_color, icon=marker_icon),
-        opacity=marker_opacity
-    ).add_to(static_cluster)
-for country, coords in middle_points.items():
-    folium.CircleMarker(
-        location=coords,
-        radius=2,
-        color="black",
-        fill=True,
-        fill_opacity=0.8,
-        popup=country
-    ).add_to(m)
-st_data = st_folium(m, width=None, height=400)
+# --- Show Filtered Table ---
+st.header("Entries")
+if filtered_df.empty:
+    st.info("No entries match the filters.")
+else:
+    st.dataframe(filtered_df.sort_values("Date", ascending=False), use_container_width=True)
 
 # --- Editable Table / Add/Edit/Delete/Comment Info ---
 st.header("Add, Edit, Delete or Comment on Interconnector Info")
@@ -243,78 +130,10 @@ if action_mode == "Add New":
         else:
             id_val = int(df['ID'].max()+1) if not df.empty else 1
 
-        country_interconnector_map = {
-            "Austria": [
-                "Mosonmagyaróvár (Austria → Hungary)",
-                "Austria-Slovakia (Austria → Slovakia)"
-            ],
-            "Bulgaria": [
-                "Turkey-Bulgaria",
-                "Bulgaria-Romania",
-                "Bulgaria-Serbia",
-                "Greece-Bulgaria"
-            ],
-            "Croatia": [
-                "Drávaszerdahely (Croatia → Hungary)",
-                "Croatia-Slovenia"
-            ],
-            "Czechia": [],
-            "Greece": [
-                "Greece-Bulgaria"
-            ],
-            "Hungary": [
-                "Mosonmagyaróvár (Austria → Hungary)",
-                "Drávaszerdahely (Croatia → Hungary)",
-                "Kiskundorozsma (Serbia → Hungary)",
-                "Balassagyarmat (Hungary → Slovakia)",
-                "Csanádpalota (Hungary → Romania)",
-                "Bereg (Hungary → Ukraine)"
-            ],
-            "Moldova": [
-                "Romania-Moldova",
-                "Moldova-Ukraine"
-            ],
-            "Romania": [
-                "Bulgaria-Romania",
-                "Serbia-Romania",
-                "Csanádpalota (Hungary → Romania)",
-                "Romania-Moldova",
-                "Romania-Ukraine"
-            ],
-            "Serbia": [
-                "Bulgaria-Serbia",
-                "Kiskundorozsma (Serbia → Hungary)",
-                "Serbia-Romania"
-            ],
-            "Slovakia": [
-                "Austria-Slovakia (Austria → Slovakia)",
-                "Balassagyarmat (Hungary → Slovakia)",
-                "Slovakia-Ukraine",
-                "Poland-Slovakia (Poland → Slovakia)"
-            ],
-            "Slovenia": [
-                "Croatia-Slovenia"
-            ],
-            "Turkey": [
-                "Turkey-Bulgaria"
-            ],
-            "Ukraine": [
-                "Bereg (Hungary → Ukraine)",
-                "Romania-Ukraine",
-                "Slovakia-Ukraine",
-                "Moldova-Ukraine",
-                "Ukraine-Poland"
-            ],
-            "Poland": [
-                "Ukraine-Poland",
-                "Poland-Slovakia (Poland → Slovakia)"
-            ]
-        }
+        country_options = sorted(df['Country'].dropna().unique()) if not df.empty else []
+        selected_country = st.selectbox("Select Country", country_options)
+        related_ics = sorted(df[df['Country'] == selected_country]['Interconnector'].dropna().unique()) if not df.empty else []
 
-        selected_country = st.selectbox("Select Country (to see related interconnectors)", list(country_interconnector_map.keys()))
-        related_ics = country_interconnector_map.get(selected_country, [])
-
-        # Only show the dropdown if there are interconnectors, else show a message and no dropdown.
         if related_ics:
             interconnector = st.selectbox("Interconnector", related_ics)
         else:
@@ -349,59 +168,12 @@ if action_mode == "Add New":
                 if exists:
                     old_row = df[df['ID'] == new_row["ID"]].iloc[0].to_dict()
                     df.loc[df['ID'] == new_row["ID"], :] = pd.Series(new_row)
-                    append_history("edit", new_row, old_row=old_row, username=username)
+                    append_history("edit", new_row, old_data=old_row, username=username)
                 else:
                     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
                     append_history("create", new_row, username=username)
                 save_data(df)
             st.success("Information saved to Google Sheet!")
-            st.rerun()
-
-elif action_mode == "Edit Existing":
-    if df.empty:
-        st.info("No data to edit.")
-    else:
-        editable_row = st.selectbox("Select entry to edit (by ID)", df["ID"])
-        row = df[df["ID"] == editable_row].iloc[0]
-        with st.form("edit_existing_form"):
-            info = st.text_area("Info", value=row["Info"])
-            comments = st.text_area("Comments/Annotations", value=row["Comments"])
-            submitted = st.form_submit_button("Update")
-            if submitted:
-                updated_row = row.copy()
-                updated_row["Info"] = info
-                updated_row["Comments"] = comments
-                df.loc[df["ID"] == editable_row, ["Info", "Comments"]] = info, comments
-                append_history("edit", updated_row.to_dict(), old_data=row.to_dict(), username=username)
-                save_data(df)
-                st.success("Entry updated.")
-                st.rerun()
-elif action_mode == "Delete":
-    if df.empty:
-        st.info("No data to delete.")
-    else:
-        delete_row_id = st.selectbox("Select entry to delete (by ID)", df["ID"])
-        row = df[df["ID"] == delete_row_id].iloc[0]
-        st.warning(f"Are you sure you want to delete entry ID {delete_row_id}? This action cannot be undone.")
-        if st.button("Confirm Delete"):
-            append_history("delete", {}, old_data=row.to_dict(), username=username)
-            df = df[df["ID"] != delete_row_id]
-            save_data(df)
-            st.success(f"Entry {delete_row_id} deleted.")
-            st.rerun()
-elif action_mode == "Add Comment/Annotation":
-    if df.empty:
-        st.info("No entries to comment on.")
-    else:
-        comment_row_id = st.selectbox("Select entry to comment/annotate (by ID)", df["ID"])
-        row = df[df["ID"] == comment_row_id].iloc[0]
-        new_comment = st.text_area("Add your comment/annotation here")
-        if st.button("Add Comment"):
-            updated_comments = (row["Comments"] or "") + f"\n[{datetime.utcnow().isoformat()} by {username}]: {new_comment}"
-            df.loc[df["ID"] == comment_row_id, "Comments"] = updated_comments
-            append_history("comment", row.to_dict(), comment=new_comment, username=username)
-            save_data(df)
-            st.success("Comment/annotation added.")
             st.rerun()
 
 elif action_mode == "Edit Existing":
@@ -469,19 +241,3 @@ to_download = BytesIO()
 df.to_excel(to_download, index=False)
 to_download.seek(0)
 st.download_button("Backup Data", to_download, file_name=f"gas_snapshot_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
-
-# --- Optimize for mobile/tablet ---
-st.markdown("""
-<style>
-@media (max-width: 800px) {
-    .block-container {
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
-    }
-    .css-1kyxreq {
-        width: 100vw !important;
-        min-width: 100vw !important;
-    }
-}
-</style>
-""", unsafe_allow_html=True)
