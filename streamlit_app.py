@@ -15,6 +15,10 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive"
 ]
 
+REQUIRED_COLUMNS = [
+    "Name", "Counterparty", "Country", "Interconnector", "Date", "Info", "Tags"
+]
+
 def get_gs_client():
     gcp_info = st.secrets["gcp_service_account"]
     credentials = Credentials.from_service_account_info(gcp_info, scopes=SCOPES)
@@ -28,7 +32,7 @@ def load_data():
     with st.spinner("Loading data from Google Sheets..."):
         sheet = get_gs_sheet()
         df = pd.DataFrame(sheet.get_all_records())
-        for col in ["Comments", "Tags", "Counterparty"]:
+        for col in REQUIRED_COLUMNS:
             if col not in df.columns:
                 df[col] = ""
         return df
@@ -44,7 +48,7 @@ def append_history(action, row_data, old_data=None, comment=None, username=None)
     record = {
         "Timestamp": datetime.utcnow().isoformat(),
         "Action": action,
-        "ID": row_data.get("ID", ""),
+        "Name": row_data.get("Name", ""),
         "Interconnector": row_data.get("Interconnector", ""),
         "Data": json.dumps(row_data),
         "Old Data": json.dumps(old_data) if old_data else "",
@@ -78,28 +82,38 @@ except Exception as e:
     st.error(f"Could not load data from Google Sheets: {e}")
     st.stop()
 
+# --- Ensure required columns exist ---
+for col in REQUIRED_COLUMNS:
+    if col not in df.columns:
+        df[col] = ""
+
 # --- Filtering & Search ---
 countries = sorted(df['Country'].dropna().unique()) if not df.empty else []
 interconnectors = sorted(df['Interconnector'].dropna().unique()) if not df.empty else []
-search_query = st.sidebar.text_input("🔍 Search info/comments")
+search_query = st.sidebar.text_input("🔍 Search info/tags")
+if not df.empty and (df['Date'] != "").any():
+    min_date = pd.to_datetime(df[df['Date'] != ""]['Date']).min()
+    max_date = pd.to_datetime(df[df['Date'] != ""]['Date']).max()
+else:
+    min_date = datetime(2000,1,1)
+    max_date = datetime.today()
+date_range = st.sidebar.date_input("Date range", [min_date, max_date])
+
 selected_country = st.sidebar.multiselect("Country", countries, default=countries)
 selected_interconnector = st.sidebar.multiselect("Interconnector", interconnectors, default=interconnectors)
-min_date = pd.to_datetime(df['Date']).min() if not df.empty else datetime(2000,1,1)
-max_date = pd.to_datetime(df['Date']).max() if not df.empty else datetime.today()
-date_range = st.sidebar.date_input("Date range", [min_date, max_date])
 
 filtered_df = df.copy()
 if not df.empty:
     filtered_df = filtered_df[
         (filtered_df['Country'].isin(selected_country)) &
         (filtered_df['Interconnector'].isin(selected_interconnector)) &
-        (pd.to_datetime(filtered_df['Date']) >= pd.to_datetime(date_range[0])) &
-        (pd.to_datetime(filtered_df['Date']) <= pd.to_datetime(date_range[1]))
+        (pd.to_datetime(filtered_df['Date'], errors="coerce") >= pd.to_datetime(date_range[0])) &
+        (pd.to_datetime(filtered_df['Date'], errors="coerce") <= pd.to_datetime(date_range[1]))
     ]
     if search_query:
         filtered_df = filtered_df[
             filtered_df["Info"].str.contains(search_query, case=False, na=False) |
-            filtered_df["Comments"].str.contains(search_query, case=False, na=False)
+            filtered_df["Tags"].str.contains(search_query, case=False, na=False)
         ]
 
 # --- Show Filtered Table ---
@@ -109,24 +123,17 @@ if filtered_df.empty:
 else:
     st.dataframe(filtered_df.sort_values("Date", ascending=False), use_container_width=True)
 
-# --- Editable Table / Add/Edit/Delete/Comment Info ---
-st.header("Add, Edit, Delete or Comment on Interconnector Info")
-action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete", "Add/Delete Comment"])
+# --- Editable Table / Add/Edit/Delete Info ---
+st.header("Add, Edit, Delete Info")
+action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 
 if action_mode == "Add New":
-    with st.form("add_edit_form", clear_on_submit=True):
-        id_val = int(df['ID'].max()+1) if not df.empty else 1
-
-        country_options = sorted(df['Country'].dropna().unique()) if not df.empty else []
-        selected_country = st.selectbox("Select Country", country_options)
-        related_ics = sorted(df[df['Country'] == selected_country]['Interconnector'].dropna().unique()) if not df.empty else []
-
-        if related_ics:
-            interconnector = st.selectbox("Interconnector", related_ics)
-        else:
-            st.info("No interconnectors available for this country.")
-            interconnector = None
-
+    with st.form("add_form", clear_on_submit=True):
+        # Use Name as identifier, ask user to provide
+        name = st.text_input("Name")
+        country = st.selectbox("Country", sorted(df['Country'].dropna().unique()) if not df.empty else [])
+        related_ics = sorted(df[df['Country'] == country]['Interconnector'].dropna().unique()) if not df.empty and country else []
+        interconnector = st.selectbox("Interconnector", related_ics) if related_ics else st.text_input("Interconnector")
         date = st.date_input("Date", datetime.today())
         counterparty = st.text_input("Counterparty")
         info = st.text_area("Info")
@@ -135,34 +142,25 @@ if action_mode == "Add New":
 
         submitted = st.form_submit_button("Save")
         if submitted:
-            if not interconnector:
-                st.error("No interconnector selected. Cannot save.")
+            if not name or not country or not interconnector or not info or not username:
+                st.error("Please complete all required fields (Name, Country, Interconnector, Info, Your Name).")
                 st.stop()
-            if not username:
-                st.error("Please enter your name for the change.")
+            # Check for duplicate Name (as unique identifier)
+            if not df.empty and (df['Name'] == name).any():
+                st.error("This Name already exists! Please choose a unique Name.")
                 st.stop()
-
             new_row = {
-                "ID": id_val,
-                "Country": selected_country,
+                "Name": name,
+                "Counterparty": counterparty,
+                "Country": country,
                 "Interconnector": interconnector,
                 "Date": date.strftime("%Y-%m-%d"),
                 "Info": info,
-                "Comments": "",
-                "Tags": tags,
-                "Counterparty": counterparty,
+                "Tags": tags
             }
-
-            exists = not df.empty and (df['ID'] == new_row["ID"]).any()
-            with st.spinner("Saving data to Google Sheets..."):
-                if exists:
-                    old_row = df[df['ID'] == new_row["ID"]].iloc[0].to_dict()
-                    df.loc[df['ID'] == new_row["ID"], :] = pd.Series(new_row)
-                    append_history("edit", new_row, old_data=old_row, username=username)
-                else:
-                    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-                    append_history("create", new_row, username=username)
-                save_data(df)
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            append_history("create", new_row, username=username)
+            save_data(df)
             st.success("Information saved to Google Sheet!")
             st.rerun()
 
@@ -170,87 +168,56 @@ elif action_mode == "Edit Existing":
     if df.empty:
         st.info("No data to edit.")
     else:
-        editable_row = st.selectbox("Select entry to edit (by ID)", df["ID"])
-        row = df[df["ID"] == editable_row].iloc[0]
-        with st.form("edit_existing_form"):
+        editable_row = st.selectbox("Select entry to edit (by Name)", df["Name"])
+        row = df[df["Name"] == editable_row].iloc[0]
+        with st.form("edit_form"):
+            country = st.selectbox("Country", sorted(df['Country'].dropna().unique()), index=sorted(df['Country'].dropna().unique()).index(row["Country"]) if row["Country"] in list(sorted(df['Country'].dropna().unique())) else 0)
+            related_ics = sorted(df[df['Country'] == country]['Interconnector'].dropna().unique()) if not df.empty and country else []
+            interconnector = st.selectbox("Interconnector", related_ics, index=related_ics.index(row["Interconnector"]) if row["Interconnector"] in related_ics else 0) if related_ics else st.text_input("Interconnector", value=row["Interconnector"])
+            date = st.date_input("Date", pd.to_datetime(row["Date"], errors="coerce") if row["Date"] else datetime.today())
+            counterparty = st.text_input("Counterparty", value=row["Counterparty"])
             info = st.text_area("Info", value=row["Info"])
-            tags = st.text_input("Tags (comma separated)", value=row.get("Tags",""))
-            counterparty = st.text_input("Counterparty", value=row.get("Counterparty",""))
+            tags = st.text_input("Tags (comma separated)", value=row["Tags"])
             username = st.text_input("Your Name (who did the change)")
             submitted = st.form_submit_button("Update")
             if submitted:
                 if not username:
                     st.error("Please enter your name for the change.")
                     st.stop()
-                updated_row = row.copy()
-                updated_row["Info"] = info
-                updated_row["Tags"] = tags
-                updated_row["Counterparty"] = counterparty
-                df.loc[df["ID"] == editable_row, ["Info", "Tags", "Counterparty"]] = info, tags, counterparty
-                append_history("edit", updated_row.to_dict(), old_data=row.to_dict(), username=username)
+                updated_row = {
+                    "Name": editable_row,
+                    "Counterparty": counterparty,
+                    "Country": country,
+                    "Interconnector": interconnector,
+                    "Date": date.strftime("%Y-%m-%d"),
+                    "Info": info,
+                    "Tags": tags
+                }
+                old_row = row.to_dict()
+                for key in updated_row:
+                    df.loc[df["Name"] == editable_row, key] = updated_row[key]
+                append_history("edit", updated_row, old_data=old_row, username=username)
                 save_data(df)
                 st.success("Entry updated.")
                 st.rerun()
+
 elif action_mode == "Delete":
     if df.empty:
         st.info("No data to delete.")
     else:
-        delete_row_id = st.selectbox("Select entry to delete (by ID)", df["ID"])
-        row = df[df["ID"] == delete_row_id].iloc[0]
+        delete_row_name = st.selectbox("Select entry to delete (by Name)", df["Name"])
+        row = df[df["Name"] == delete_row_name].iloc[0]
         username = st.text_input("Your Name (who did the change)")
-        st.warning(f"Are you sure you want to delete entry ID {delete_row_id}? This action cannot be undone.")
+        st.warning(f"Are you sure you want to delete entry Name '{delete_row_name}'? This action cannot be undone.")
         if st.button("Confirm Delete"):
             if not username:
                 st.error("Please enter your name for the change.")
                 st.stop()
-            append_history("delete", {}, old_data=row.to_dict(), username=username)
-            df = df[df["ID"] != delete_row_id]
+            append_history("delete", row.to_dict(), username=username)
+            df = df[df["Name"] != delete_row_name]
             save_data(df)
-            st.success(f"Entry {delete_row_id} deleted.")
+            st.success(f"Entry '{delete_row_name}' deleted.")
             st.rerun()
-elif action_mode == "Add/Delete Comment":
-    if df.empty:
-        st.info("No entries for comment management.")
-    else:
-        comment_row_id = st.selectbox("Select entry to manage comments (by ID)", df["ID"])
-        row = df[df["ID"] == comment_row_id].iloc[0]
-        comments_list = [
-            c for c in (row["Comments"].split("\n") if pd.notnull(row["Comments"]) and row["Comments"] else [])
-            if c.strip()
-        ]
-        username = st.text_input("Your Name (who did the change)")
-        tab_add, tab_delete = st.tabs(["Add Comment", "Delete Comment"])
-        with tab_add:
-            new_comment = st.text_area("Add your comment/annotation here")
-            if st.button("Add Comment"):
-                if not username:
-                    st.error("Please enter your name for the change.")
-                    st.stop()
-                new_comment_text = f"[{datetime.utcnow().isoformat()} by {username}]: {new_comment}"
-                updated_comments = (row["Comments"] or "")
-                if updated_comments:
-                    updated_comments += "\n"
-                updated_comments += new_comment_text
-                df.loc[df["ID"] == comment_row_id, "Comments"] = updated_comments
-                append_history("comment", row.to_dict(), comment=new_comment, username=username)
-                save_data(df)
-                st.success("Comment/annotation added.")
-                st.rerun()
-        with tab_delete:
-            if comments_list:
-                comment_to_delete = st.selectbox("Select comment to delete", comments_list)
-                if st.button("Delete Selected Comment"):
-                    if not username:
-                        st.error("Please enter your name for the change.")
-                        st.stop()
-                    updated_comments = "\n".join([c for c in comments_list if c != comment_to_delete])
-                    df.loc[df["ID"] == comment_row_id, "Comments"] = updated_comments
-                    append_history("delete_comment", row.to_dict(), comment=comment_to_delete, username=username)
-                    save_data(df)
-                    st.success("Comment deleted.")
-                    st.rerun()
-            else:
-                st.info("No comments to delete for this entry.")
 
 # --- Show Change Log / History for Interconnector ---
 st.header("Change Log / History for Interconnector")
