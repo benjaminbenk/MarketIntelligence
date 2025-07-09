@@ -28,10 +28,9 @@ def load_data():
     with st.spinner("Loading data from Google Sheets..."):
         sheet = get_gs_sheet()
         df = pd.DataFrame(sheet.get_all_records())
-        if "Comments" not in df.columns:
-            df["Comments"] = ""
-        if "Created By" not in df.columns:
-            df["Created By"] = ""
+        for col in ["Comments", "Created By", "Tags"]:
+            if col not in df.columns:
+                df[col] = ""
         return df
 
 def save_data(df):
