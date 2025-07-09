@@ -43,7 +43,7 @@ def save_data(df):
         sheet.clear()
         sheet.update([df.columns.values.tolist()] + df.values.tolist())
 
-def append_history(action, row_data, old_data=None, comment=None, username=None):
+def append_history(action, row_data, old_data=None, comment=None, name=None):
     history_sheet = get_gs_sheet(HISTORY_SHEET_NAME)
     record = {
         "Timestamp": datetime.utcnow().isoformat(),
@@ -53,7 +53,7 @@ def append_history(action, row_data, old_data=None, comment=None, username=None)
         "Data": json.dumps(row_data),
         "Old Data": json.dumps(old_data) if old_data else "",
         "Comment": comment or "",
-        "User": username or ""
+        "User": name or ""
     }
     history_sheet.append_row(list(record.values()))
 
@@ -129,8 +129,7 @@ action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 
 if action_mode == "Add New":
     with st.form("add_form", clear_on_submit=True):
-        # Use Name as identifier, ask user to provide
-        name = st.text_input("Name")
+        name = st.text_input("Name (who did the change)")
         country = st.selectbox("Country", sorted(df['Country'].dropna().unique()) if not df.empty else [])
         related_ics = sorted(df[df['Country'] == country]['Interconnector'].dropna().unique()) if not df.empty and country else []
         interconnector = st.selectbox("Interconnector", related_ics) if related_ics else st.text_input("Interconnector")
@@ -138,14 +137,11 @@ if action_mode == "Add New":
         counterparty = st.text_input("Counterparty")
         info = st.text_area("Info")
         tags = st.text_input("Tags (comma separated)")
-        username = st.text_input("Your Name (who did the change)")
-
         submitted = st.form_submit_button("Save")
         if submitted:
-            if not name or not country or not interconnector or not info or not username:
-                st.error("Please complete all required fields (Name, Country, Interconnector, Info, Your Name).")
+            if not name or not country or not interconnector or not info:
+                st.error("Please complete all required fields (Name, Country, Interconnector, Info).")
                 st.stop()
-            # Check for duplicate Name (as unique identifier)
             if not df.empty and (df['Name'] == name).any():
                 st.error("This Name already exists! Please choose a unique Name.")
                 st.stop()
@@ -159,7 +155,7 @@ if action_mode == "Add New":
                 "Tags": tags
             }
             df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-            append_history("create", new_row, username=username)
+            append_history("create", new_row, name=name)
             save_data(df)
             st.success("Information saved to Google Sheet!")
             st.rerun()
@@ -178,12 +174,8 @@ elif action_mode == "Edit Existing":
             counterparty = st.text_input("Counterparty", value=row["Counterparty"])
             info = st.text_area("Info", value=row["Info"])
             tags = st.text_input("Tags (comma separated)", value=row["Tags"])
-            username = st.text_input("Your Name (who did the change)")
             submitted = st.form_submit_button("Update")
             if submitted:
-                if not username:
-                    st.error("Please enter your name for the change.")
-                    st.stop()
                 updated_row = {
                     "Name": editable_row,
                     "Counterparty": counterparty,
@@ -196,7 +188,7 @@ elif action_mode == "Edit Existing":
                 old_row = row.to_dict()
                 for key in updated_row:
                     df.loc[df["Name"] == editable_row, key] = updated_row[key]
-                append_history("edit", updated_row, old_data=old_row, username=username)
+                append_history("edit", updated_row, old_data=old_row, name=editable_row)
                 save_data(df)
                 st.success("Entry updated.")
                 st.rerun()
@@ -207,13 +199,9 @@ elif action_mode == "Delete":
     else:
         delete_row_name = st.selectbox("Select entry to delete (by Name)", df["Name"])
         row = df[df["Name"] == delete_row_name].iloc[0]
-        username = st.text_input("Your Name (who did the change)")
         st.warning(f"Are you sure you want to delete entry Name '{delete_row_name}'? This action cannot be undone.")
         if st.button("Confirm Delete"):
-            if not username:
-                st.error("Please enter your name for the change.")
-                st.stop()
-            append_history("delete", row.to_dict(), username=username)
+            append_history("delete", row.to_dict(), name=delete_row_name)
             df = df[df["Name"] != delete_row_name]
             save_data(df)
             st.success(f"Entry '{delete_row_name}' deleted.")
