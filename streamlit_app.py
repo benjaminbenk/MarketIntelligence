@@ -9,7 +9,7 @@ import json
 # --- Google Sheets Setup ---
 SHEET_NAME = "MarketIntelligenceGAS"
 HISTORY_SHEET_NAME = "History"
-EXCEL_LINK = "https://docs.google.com/spreadsheets/d/12jH5gmwMopM9j5uTWOtc6wEafscgf5SvT8gDmoAFawE/edit?gid=0#gid=0"
+EXCEL_LINK = "https://docs.google.com/spreadsheets/d/12jH5gmwMopm9j5uTWOtc6wEafscgf5SvT8gDmoAFawE/edit?gid=0#gid=0"
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
@@ -28,7 +28,7 @@ def load_data():
     with st.spinner("Loading data from Google Sheets..."):
         sheet = get_gs_sheet()
         df = pd.DataFrame(sheet.get_all_records())
-        for col in ["Comments", "Created By", "Tags"]:
+        for col in ["Comments", "Created By", "Tags", "Counterparty"]:
             if col not in df.columns:
                 df[col] = ""
         return df
