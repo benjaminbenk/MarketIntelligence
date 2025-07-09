@@ -98,39 +98,33 @@ st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 
 if action_mode == "Add New":
-   with st.form("add_form", clear_on_submit=True):
-    counterparty = st.text_input("Counterparty")  # 1
-    
-    point_type = st.selectbox("Network Point Type", POINT_TYPES)  # 2
+    with st.form("add_form", clear_on_submit=True):
+        counterparty = st.text_input("Counterparty")
+        point_type = st.selectbox("Network Point Type", POINT_TYPES)
 
-    # 3 - based on point_type
-    if point_type == "Crossborder Point":
-        point_name = st.text_input("Crossborder Point")
-    elif point_type == "Virtual Point":
-        point_name = st.selectbox("Virtual Point", VIRTUAL_POINTS + ["Other..."])
-        if point_name == "Other...":
-            point_name = st.text_input("Enter new Virtual Point")
-    elif point_type == "Storage":
-        point_name = st.selectbox("Storage Point", STORAGE_POINTS + ["Other..."])
-        if point_name == "Other...":
-            point_name = st.text_input("Enter new Storage Point")
-    else:
-        point_name = "Entire Country"
+        if point_type == "Crossborder Point":
+            point_name = st.text_input("Crossborder Point")
+        elif point_type == "Virtual Point":
+            point_name = st.selectbox("Virtual Point", VIRTUAL_POINTS + ["Other..."])
+            if point_name == "Other...":
+                point_name = st.text_input("Enter new Virtual Point")
+        elif point_type == "Storage":
+            point_name = st.selectbox("Storage Point", STORAGE_POINTS + ["Other..."])
+            if point_name == "Other...":
+                point_name = st.text_input("Enter new Storage Point")
+        else:
+            point_name = "Entire Country"
 
-    country = st.selectbox("Country", COUNTRIES_LIST)  # 4
+        country = st.selectbox("Country", COUNTRIES_LIST)
+        date = st.date_input("Date", datetime.today())
+        info = st.text_area("Info")
+        selected_tags = st.multiselect("Select existing tags", options=all_tags)
+        custom_tags = st.text_input("Or add custom tags (comma separated)")
+        all_selected_tags = selected_tags + [t.strip() for t in custom_tags.split(",") if t.strip()]
+        tags_value = ", ".join(sorted(set(all_selected_tags)))
+        name = st.text_input("Name (who did the change)")
 
-    date = st.date_input("Date", datetime.today())  # 5
-
-    info = st.text_area("Info")  # 6
-
-    selected_tags = st.multiselect("Select existing tags", options=all_tags)  # 7
-    custom_tags = st.text_input("Or add custom tags (comma separated)")
-    all_selected_tags = selected_tags + [t.strip() for t in custom_tags.split(",") if t.strip()]
-    tags_value = ", ".join(sorted(set(all_selected_tags)))
-
-    name = st.text_input("Name (who did the change)")
-
-    submitted = st.form_submit_button("Save")
+        submitted = st.form_submit_button("Save")
         if submitted:
             if not name or not country or not point_name or not info:
                 st.error("Please complete all required fields (Name, Country, Point Name, Info).")
@@ -154,6 +148,7 @@ if action_mode == "Add New":
             save_data(df)
             st.success("Information saved to Google Sheet!")
             st.rerun()
+
 
 # --- Data Download (Backup) ---
 st.header("Download Data Snapshot / Backup")
