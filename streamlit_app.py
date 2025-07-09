@@ -64,11 +64,11 @@ def get_history_for_interconnector(interconnector):
 
 # --- App UI ---
 st.set_page_config(page_title="Gas Market Intelligence", layout="wide")
-st.title("📄 CEE Gas Market Intelligence (Text View)")
+st.title("CEE Gas Market Intelligence")
 
 # --- Button for Sheet Link & Backup ---
 st.markdown(
-    f'<a href="{EXCEL_LINK}" target="_blank"><button style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Go to Google Sheet</button></a>',
+    f'<a href="{EXCEL_LINK}" target="_blank"><button style="background-color:#4CAF50;color:white;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-size:16px;">Go to data</button></a>',
     unsafe_allow_html=True
 )
 
