@@ -98,37 +98,39 @@ st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 
 if action_mode == "Add New":
-    with st.form("add_form", clear_on_submit=True):
-        name = st.text_input("Name (who did the change)")
-        counterparty = st.text_input("Counterparty")
-        country = st.selectbox("Country", COUNTRIES_LIST)
-        point_type = st.selectbox("Network Point Type", POINT_TYPES)
+   with st.form("add_form", clear_on_submit=True):
+    counterparty = st.text_input("Counterparty")  # 1
+    
+    point_type = st.selectbox("Network Point Type", POINT_TYPES)  # 2
 
-        if point_type == "Crossborder Point":
-            related_points = sorted(df[df['Country'] == country]['Point Name'].dropna().unique())
-            point_name = st.selectbox("Crossborder Point", related_points + ["Other..."])
-            if point_name == "Other...":
-                point_name = st.text_input("Enter new Crossborder Point")
-        elif point_type == "Virtual Point":
-            point_name = st.selectbox("Virtual Point", VIRTUAL_POINTS + ["Other..."])
-            if point_name == "Other...":
-                point_name = st.text_input("Enter new Virtual Point")
-        elif point_type == "Storage":
-            point_name = st.selectbox("Storage Point", STORAGE_POINTS + ["Other..."])
-            if point_name == "Other...":
-                point_name = st.text_input("Enter new Storage Point")
-        else:
-            point_name = "Entire Country"
+    # 3 - based on point_type
+    if point_type == "Crossborder Point":
+        point_name = st.text_input("Crossborder Point")
+    elif point_type == "Virtual Point":
+        point_name = st.selectbox("Virtual Point", VIRTUAL_POINTS + ["Other..."])
+        if point_name == "Other...":
+            point_name = st.text_input("Enter new Virtual Point")
+    elif point_type == "Storage":
+        point_name = st.selectbox("Storage Point", STORAGE_POINTS + ["Other..."])
+        if point_name == "Other...":
+            point_name = st.text_input("Enter new Storage Point")
+    else:
+        point_name = "Entire Country"
 
-        date = st.date_input("Date", datetime.today())
-        info = st.text_area("Info")
+    country = st.selectbox("Country", COUNTRIES_LIST)  # 4
 
-        selected_tags = st.multiselect("Select existing tags", options=all_tags)
-        custom_tags = st.text_input("Or add custom tags (comma separated)")
-        all_selected_tags = selected_tags + [t.strip() for t in custom_tags.split(",") if t.strip()]
-        tags_value = ", ".join(sorted(set(all_selected_tags)))
+    date = st.date_input("Date", datetime.today())  # 5
 
-        submitted = st.form_submit_button("Save")
+    info = st.text_area("Info")  # 6
+
+    selected_tags = st.multiselect("Select existing tags", options=all_tags)  # 7
+    custom_tags = st.text_input("Or add custom tags (comma separated)")
+    all_selected_tags = selected_tags + [t.strip() for t in custom_tags.split(",") if t.strip()]
+    tags_value = ", ".join(sorted(set(all_selected_tags)))
+
+    name = st.text_input("Name (who did the change)")
+
+    submitted = st.form_submit_button("Save")
         if submitted:
             if not name or not country or not point_name or not info:
                 st.error("Please complete all required fields (Name, Country, Point Name, Info).")
