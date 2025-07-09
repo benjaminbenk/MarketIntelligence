@@ -19,6 +19,11 @@ REQUIRED_COLUMNS = [
     "Name", "Counterparty", "Country", "Interconnector", "Date", "Info", "Tags"
 ]
 
+COUNTRIES_LIST = [
+    "Turkey", "Bulgaria", "Romania", "Greece", "Serbia", "Hungary",
+    "Croatia", "Slovenia", "Austria", "Slovakia", "Ukraine", "Moldova"
+]
+
 def get_gs_client():
     gcp_info = st.secrets["gcp_service_account"]
     credentials = Credentials.from_service_account_info(gcp_info, scopes=SCOPES)
@@ -95,7 +100,7 @@ for tags_str in df["Tags"].dropna():
 all_tags = sorted(all_tags)
 
 # --- Filtering & Search ---
-countries = sorted(df['Country'].dropna().unique()) if not df.empty else []
+countries = COUNTRIES_LIST
 interconnectors = sorted(df['Interconnector'].dropna().unique()) if not df.empty else []
 search_query = st.sidebar.text_input("🔍 Search info/tags")
 if not df.empty and (df['Date'] != "").any():
@@ -137,7 +142,7 @@ action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 if action_mode == "Add New":
     with st.form("add_form", clear_on_submit=True):
         name = st.text_input("Name (who did the change)")
-        country = st.selectbox("Country", sorted(df['Country'].dropna().unique()) if not df.empty else [])
+        country = st.selectbox("Country", COUNTRIES_LIST)
         related_ics = sorted(df[df['Country'] == country]['Interconnector'].dropna().unique()) if not df.empty and country else []
         interconnector = st.selectbox("Interconnector", related_ics) if related_ics else st.text_input("Interconnector")
         date = st.date_input("Date", datetime.today())
@@ -178,11 +183,11 @@ elif action_mode == "Edit Existing":
         editable_row = st.selectbox("Select entry to edit (by Name)", df["Name"])
         row = df[df["Name"] == editable_row].iloc[0]
         with st.form("edit_form"):
-            country = st.selectbox("Country", sorted(df['Country'].dropna().unique()), index=sorted(df['Country'].dropna().unique()).index(row["Country"]) if row["Country"] in list(sorted(df['Country'].dropna().unique())) else 0)
+            counterparty = st.text_input("Counterparty", value=row["Counterparty"])
+            country = st.selectbox("Country", COUNTRIES_LIST, index=COUNTRIES_LIST.index(row["Country"]) if row["Country"] in COUNTRIES_LIST else 0)
             related_ics = sorted(df[df['Country'] == country]['Interconnector'].dropna().unique()) if not df.empty and country else []
             interconnector = st.selectbox("Interconnector", related_ics, index=related_ics.index(row["Interconnector"]) if row["Interconnector"] in related_ics else 0) if related_ics else st.text_input("Interconnector", value=row["Interconnector"])
             date = st.date_input("Date", pd.to_datetime(row["Date"], errors="coerce") if row["Date"] else datetime.today())
-            counterparty = st.text_input("Counterparty", value=row["Counterparty"])
             info = st.text_area("Info", value=row["Info"])
             # Tag selection: dropdown + custom
             existing_tags = [t.strip() for t in str(row["Tags"]).split(",") if t.strip()]
