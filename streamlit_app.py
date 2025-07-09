@@ -28,7 +28,7 @@ def load_data():
     with st.spinner("Loading data from Google Sheets..."):
         sheet = get_gs_sheet()
         df = pd.DataFrame(sheet.get_all_records())
-        for col in ["Comments", "Created By", "Tags", "Counterparty"]:
+        for col in ["Comments", "Tags", "Counterparty"]:
             if col not in df.columns:
                 df[col] = ""
         return df
@@ -49,7 +49,7 @@ def append_history(action, row_data, old_data=None, comment=None, username=None)
         "Data": json.dumps(row_data),
         "Old Data": json.dumps(old_data) if old_data else "",
         "Comment": comment or "",
-        "User": username or st.session_state.get("username", "anonymous")
+        "User": username or ""
     }
     history_sheet.append_row(list(record.values()))
 
@@ -111,23 +111,11 @@ else:
 
 # --- Editable Table / Add/Edit/Delete/Comment Info ---
 st.header("Add, Edit, Delete or Comment on Interconnector Info")
-username = st.session_state.get("username", "benjaminbenk")
-action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete", "Add Comment/Annotation"])
+action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete", "Add/Delete Comment"])
 
 if action_mode == "Add New":
     with st.form("add_edit_form", clear_on_submit=True):
-        id_mode = st.radio("ID assignment", ["Auto", "Manual"], horizontal=True)
-        if id_mode == "Manual":
-            id_val = st.number_input(
-                "ID (choose a unique number)",
-                value=int(df['ID'].max()+1) if not df.empty else 1,
-                step=1,
-                min_value=1
-            )
-            if not df.empty and (df['ID'] == id_val).any():
-                st.warning("This ID already exists! Please choose a unique number or select Auto.")
-        else:
-            id_val = int(df['ID'].max()+1) if not df.empty else 1
+        id_val = int(df['ID'].max()+1) if not df.empty else 1
 
         country_options = sorted(df['Country'].dropna().unique()) if not df.empty else []
         selected_country = st.selectbox("Select Country", country_options)
@@ -140,16 +128,18 @@ if action_mode == "Add New":
             interconnector = None
 
         date = st.date_input("Date", datetime.today())
+        counterparty = st.text_input("Counterparty")
         info = st.text_area("Info")
-        comments = st.text_area("Comments/Annotations")
+        tags = st.text_input("Tags (comma separated)")
+        username = st.text_input("Your Name (who did the change)")
 
         submitted = st.form_submit_button("Save")
         if submitted:
             if not interconnector:
                 st.error("No interconnector selected. Cannot save.")
                 st.stop()
-            if id_mode == "Manual" and not df.empty and (df['ID'] == id_val).any():
-                st.error("Duplicate ID! Entry not saved.")
+            if not username:
+                st.error("Please enter your name for the change.")
                 st.stop()
 
             new_row = {
@@ -158,9 +148,9 @@ if action_mode == "Add New":
                 "Interconnector": interconnector,
                 "Date": date.strftime("%Y-%m-%d"),
                 "Info": info,
-                "Comments": comments,
-                "Created By": username,
-                "Tags": tags
+                "Comments": "",
+                "Tags": tags,
+                "Counterparty": counterparty,
             }
 
             exists = not df.empty and (df['ID'] == new_row["ID"]).any()
@@ -184,13 +174,19 @@ elif action_mode == "Edit Existing":
         row = df[df["ID"] == editable_row].iloc[0]
         with st.form("edit_existing_form"):
             info = st.text_area("Info", value=row["Info"])
-            comments = st.text_area("Comments/Annotations", value=row["Comments"])
+            tags = st.text_input("Tags (comma separated)", value=row.get("Tags",""))
+            counterparty = st.text_input("Counterparty", value=row.get("Counterparty",""))
+            username = st.text_input("Your Name (who did the change)")
             submitted = st.form_submit_button("Update")
             if submitted:
+                if not username:
+                    st.error("Please enter your name for the change.")
+                    st.stop()
                 updated_row = row.copy()
                 updated_row["Info"] = info
-                updated_row["Comments"] = comments
-                df.loc[df["ID"] == editable_row, ["Info", "Comments"]] = info, comments
+                updated_row["Tags"] = tags
+                updated_row["Counterparty"] = counterparty
+                df.loc[df["ID"] == editable_row, ["Info", "Tags", "Counterparty"]] = info, tags, counterparty
                 append_history("edit", updated_row.to_dict(), old_data=row.to_dict(), username=username)
                 save_data(df)
                 st.success("Entry updated.")
@@ -201,27 +197,60 @@ elif action_mode == "Delete":
     else:
         delete_row_id = st.selectbox("Select entry to delete (by ID)", df["ID"])
         row = df[df["ID"] == delete_row_id].iloc[0]
+        username = st.text_input("Your Name (who did the change)")
         st.warning(f"Are you sure you want to delete entry ID {delete_row_id}? This action cannot be undone.")
         if st.button("Confirm Delete"):
+            if not username:
+                st.error("Please enter your name for the change.")
+                st.stop()
             append_history("delete", {}, old_data=row.to_dict(), username=username)
             df = df[df["ID"] != delete_row_id]
             save_data(df)
             st.success(f"Entry {delete_row_id} deleted.")
             st.rerun()
-elif action_mode == "Add Comment/Annotation":
+elif action_mode == "Add/Delete Comment":
     if df.empty:
-        st.info("No entries to comment on.")
+        st.info("No entries for comment management.")
     else:
-        comment_row_id = st.selectbox("Select entry to comment/annotate (by ID)", df["ID"])
+        comment_row_id = st.selectbox("Select entry to manage comments (by ID)", df["ID"])
         row = df[df["ID"] == comment_row_id].iloc[0]
-        new_comment = st.text_area("Add your comment/annotation here")
-        if st.button("Add Comment"):
-            updated_comments = (row["Comments"] or "") + f"\n[{datetime.utcnow().isoformat()} by {username}]: {new_comment}"
-            df.loc[df["ID"] == comment_row_id, "Comments"] = updated_comments
-            append_history("comment", row.to_dict(), comment=new_comment, username=username)
-            save_data(df)
-            st.success("Comment/annotation added.")
-            st.rerun()
+        comments_list = [
+            c for c in (row["Comments"].split("\n") if pd.notnull(row["Comments"]) and row["Comments"] else [])
+            if c.strip()
+        ]
+        username = st.text_input("Your Name (who did the change)")
+        tab_add, tab_delete = st.tabs(["Add Comment", "Delete Comment"])
+        with tab_add:
+            new_comment = st.text_area("Add your comment/annotation here")
+            if st.button("Add Comment"):
+                if not username:
+                    st.error("Please enter your name for the change.")
+                    st.stop()
+                new_comment_text = f"[{datetime.utcnow().isoformat()} by {username}]: {new_comment}"
+                updated_comments = (row["Comments"] or "")
+                if updated_comments:
+                    updated_comments += "\n"
+                updated_comments += new_comment_text
+                df.loc[df["ID"] == comment_row_id, "Comments"] = updated_comments
+                append_history("comment", row.to_dict(), comment=new_comment, username=username)
+                save_data(df)
+                st.success("Comment/annotation added.")
+                st.rerun()
+        with tab_delete:
+            if comments_list:
+                comment_to_delete = st.selectbox("Select comment to delete", comments_list)
+                if st.button("Delete Selected Comment"):
+                    if not username:
+                        st.error("Please enter your name for the change.")
+                        st.stop()
+                    updated_comments = "\n".join([c for c in comments_list if c != comment_to_delete])
+                    df.loc[df["ID"] == comment_row_id, "Comments"] = updated_comments
+                    append_history("delete_comment", row.to_dict(), comment=comment_to_delete, username=username)
+                    save_data(df)
+                    st.success("Comment deleted.")
+                    st.rerun()
+            else:
+                st.info("No comments to delete for this entry.")
 
 # --- Show Change Log / History for Interconnector ---
 st.header("Change Log / History for Interconnector")
