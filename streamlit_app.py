@@ -159,7 +159,8 @@ if action_mode == "Add New":
                 "Date": date.strftime("%Y-%m-%d"),
                 "Info": info,
                 "Comments": comments,
-                "Created By": username
+                "Created By": username,
+                "Tags": tags
             }
 
             exists = not df.empty and (df['ID'] == new_row["ID"]).any()
