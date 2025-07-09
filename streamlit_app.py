@@ -87,6 +87,13 @@ for col in REQUIRED_COLUMNS:
     if col not in df.columns:
         df[col] = ""
 
+# --- Collect all unique tags for dropdown ---
+all_tags = set()
+for tags_str in df["Tags"].dropna():
+    for tag in [t.strip() for t in tags_str.split(",") if t.strip()]:
+        all_tags.add(tag)
+all_tags = sorted(all_tags)
+
 # --- Filtering & Search ---
 countries = sorted(df['Country'].dropna().unique()) if not df.empty else []
 interconnectors = sorted(df['Interconnector'].dropna().unique()) if not df.empty else []
@@ -129,16 +136,23 @@ action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 
 if action_mode == "Add New":
     with st.form("add_form", clear_on_submit=True):
-        name = st.text_input("Name")
-        counterparty = st.text_input("Counterparty")
+        name = st.text_input("Name (who did the change)")
         country = st.selectbox("Country", sorted(df['Country'].dropna().unique()) if not df.empty else [])
         related_ics = sorted(df[df['Country'] == country]['Interconnector'].dropna().unique()) if not df.empty and country else []
         interconnector = st.selectbox("Interconnector", related_ics) if related_ics else st.text_input("Interconnector")
         date = st.date_input("Date", datetime.today())
+        counterparty = st.text_input("Counterparty")
         info = st.text_area("Info")
-        tags = st.text_input("Tags (comma separated)")
+        # Tag selection: dropdown + custom
+        selected_tags = st.multiselect("Select existing tags", options=all_tags)
+        custom_tags = st.text_input("Or add custom tags (comma separated)")
+        all_selected_tags = selected_tags + [t.strip() for t in custom_tags.split(",") if t.strip()]
+        tags_value = ", ".join(sorted(set(all_selected_tags)))
         submitted = st.form_submit_button("Save")
         if submitted:
+            if not name or not country or not interconnector or not info:
+                st.error("Please complete all required fields (Name, Country, Interconnector, Info).")
+                st.stop()
             if not df.empty and (df['Name'] == name).any():
                 st.error("This Name already exists! Please choose a unique Name.")
                 st.stop()
@@ -149,7 +163,7 @@ if action_mode == "Add New":
                 "Interconnector": interconnector,
                 "Date": date.strftime("%Y-%m-%d"),
                 "Info": info,
-                "Tags": tags
+                "Tags": tags_value
             }
             df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
             append_history("create", new_row, name=name)
@@ -164,13 +178,18 @@ elif action_mode == "Edit Existing":
         editable_row = st.selectbox("Select entry to edit (by Name)", df["Name"])
         row = df[df["Name"] == editable_row].iloc[0]
         with st.form("edit_form"):
-            counterparty = st.text_input("Counterparty", value=row["Counterparty"])
             country = st.selectbox("Country", sorted(df['Country'].dropna().unique()), index=sorted(df['Country'].dropna().unique()).index(row["Country"]) if row["Country"] in list(sorted(df['Country'].dropna().unique())) else 0)
             related_ics = sorted(df[df['Country'] == country]['Interconnector'].dropna().unique()) if not df.empty and country else []
             interconnector = st.selectbox("Interconnector", related_ics, index=related_ics.index(row["Interconnector"]) if row["Interconnector"] in related_ics else 0) if related_ics else st.text_input("Interconnector", value=row["Interconnector"])
             date = st.date_input("Date", pd.to_datetime(row["Date"], errors="coerce") if row["Date"] else datetime.today())
+            counterparty = st.text_input("Counterparty", value=row["Counterparty"])
             info = st.text_area("Info", value=row["Info"])
-            tags = st.text_input("Tags (comma separated)", value=row["Tags"])
+            # Tag selection: dropdown + custom
+            existing_tags = [t.strip() for t in str(row["Tags"]).split(",") if t.strip()]
+            selected_tags = st.multiselect("Select existing tags", options=all_tags, default=existing_tags)
+            custom_tags = st.text_input("Or add custom tags (comma separated)", value="")
+            all_selected_tags = selected_tags + [t.strip() for t in custom_tags.split(",") if t.strip()]
+            tags_value = ", ".join(sorted(set(all_selected_tags)))
             submitted = st.form_submit_button("Update")
             if submitted:
                 updated_row = {
@@ -180,7 +199,7 @@ elif action_mode == "Edit Existing":
                     "Interconnector": interconnector,
                     "Date": date.strftime("%Y-%m-%d"),
                     "Info": info,
-                    "Tags": tags
+                    "Tags": tags_value
                 }
                 old_row = row.to_dict()
                 for key in updated_row:
