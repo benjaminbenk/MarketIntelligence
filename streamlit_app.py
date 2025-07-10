@@ -11,7 +11,7 @@ import json
 # --- Google Sheets Setup ---
 SHEET_NAME = "MarketIntelligenceGAS"
 HISTORY_SHEET_NAME = "History"
-EXCEL_LINK = "https://docs.google.com/spreadsheets/d/12jH5gmwMopm9j5uTWOtc6wEafscgf5SvT8gDmoAFawE/edit?gid=0#gid=0"
+EXCEL_LINK = "https://docs.google.com/spreadsheets/d/12jH5gmwMopM9j5uTWOtc6wEafscgf5SvT8gDmoAFawE/edit?gid=0#gid=0"
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
