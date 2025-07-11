@@ -27,8 +27,8 @@ COUNTRIES_LIST = [
 ]
 
 POINT_TYPES = ["Virtual Point", "Crossborder Point", "Storage", "Entire Country"]
-VIRTUAL_POINTS = ["MGP", "VTP"]
-STORAGE_POINTS = ["Moson", "Szőreg"]
+VIRTUAL_POINTS = ["MGP", "AT-VTP"]
+STORAGE_POINTS = ["MMBF", "HEXUM"]
 PREDEFINED_TAGS = ["outage", "maintenance", "regulatory", "forecast"]
 
 # --- Functions ---
@@ -98,57 +98,62 @@ st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 
 if action_mode == "Add New":
-    with st.form("add_form", clear_on_submit=True):
-        counterparty = st.text_input("Counterparty")
-        point_type = st.selectbox("Network Point Type", POINT_TYPES)
+    st.subheader("Add New Entry")
 
-        if point_type == "Crossborder Point":
-            point_name = st.text_input("Crossborder Point")
-        elif point_type == "Virtual Point":
-            point_name = st.selectbox("Virtual Point", VIRTUAL_POINTS + ["Other..."])
-            if point_name == "Other...":
-                point_name = st.text_input("Enter new Virtual Point")
-        elif point_type == "Storage":
-            point_name = st.selectbox("Storage Point", STORAGE_POINTS + ["Other..."])
-            if point_name == "Other...":
-                point_name = st.text_input("Enter new Storage Point")
+    counterparty = st.text_input("Counterparty")
+    point_type = st.selectbox("Network Point Type", POINT_TYPES, key="point_type")
+
+    # --- Dynamic selection of point name based on type ---
+    point_name = ""
+    if point_type == "Crossborder Point":
+        point_name = st.text_input("Crossborder Point Name")
+    elif point_type == "Virtual Point":
+        selected_vp = st.selectbox("Select Virtual Point", VIRTUAL_POINTS + ["Other..."], key="vp_select")
+        if selected_vp == "Other...":
+            point_name = st.text_input("Enter new Virtual Point", key="vp_custom")
         else:
-            point_name = "Entire Country"
+            point_name = selected_vp
+    elif point_type == "Storage":
+        selected_sp = st.selectbox("Select Storage Point", STORAGE_POINTS + ["Other..."], key="sp_select")
+        if selected_sp == "Other...":
+            point_name = st.text_input("Enter new Storage Point", key="sp_custom")
+        else:
+            point_name = selected_sp
+    else:
+        point_name = "Entire Country"
 
-        country = st.selectbox("Country", COUNTRIES_LIST)
-        date = st.date_input("Date", datetime.today())
-        info = st.text_area("Info")
-        selected_tags = st.multiselect("Select existing tags", options=all_tags)
-        custom_tags = st.text_input("Or add custom tags (comma separated)")
-        all_selected_tags = selected_tags + [t.strip() for t in custom_tags.split(",") if t.strip()]
-        tags_value = ", ".join(sorted(set(all_selected_tags)))
-        name = st.text_input("Name (who did the change)")
+    country = st.selectbox("Country", COUNTRIES_LIST)
+    date = st.date_input("Date", datetime.today())
+    info = st.text_area("Info")
+    selected_tags = st.multiselect("Select existing tags", options=all_tags)
+    custom_tags = st.text_input("Or add custom tags (comma separated)")
+    all_selected_tags = selected_tags + [t.strip() for t in custom_tags.split(",") if t.strip()]
+    tags_value = ", ".join(sorted(set(all_selected_tags)))
+    name = st.text_input("Name (who did the change)")
 
-        submitted = st.form_submit_button("Save")
-        if submitted:
-            if not name or not country or not point_name or not info:
-                st.error("Please complete all required fields (Name, Country, Point Name, Info).")
-                st.stop()
-            if not df.empty and (df['Name'] == name).any():
-                st.error("This Name already exists! Please choose a unique Name.")
-                st.stop()
+    if st.button("Save Entry"):
+        if not name or not country or not point_name or not info:
+            st.error("Please complete all required fields (Name, Country, Point Name, Info).")
+            st.stop()
+        if not df.empty and (df['Name'] == name).any():
+            st.error("This Name already exists! Please choose a unique Name.")
+            st.stop()
 
-            new_row = {
-                "Name": name,
-                "Counterparty": counterparty,
-                "Country": country,
-                "Point Type": point_type,
-                "Point Name": point_name,
-                "Date": date.strftime("%Y-%m-%d"),
-                "Info": info,
-                "Tags": tags_value
-            }
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-            append_history("create", new_row, name=name)
-            save_data(df)
-            st.success("Information saved to Google Sheet!")
-            st.rerun()
-
+        new_row = {
+            "Name": name,
+            "Counterparty": counterparty,
+            "Country": country,
+            "Point Type": point_type,
+            "Point Name": point_name,
+            "Date": date.strftime("%Y-%m-%d"),
+            "Info": info,
+            "Tags": tags_value
+        }
+        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        append_history("create", new_row, name=name)
+        save_data(df)
+        st.success("Information saved to Google Sheet!")
+        st.rerun()
 
 # --- Data Download (Backup) ---
 st.header("Download Data Snapshot / Backup")
