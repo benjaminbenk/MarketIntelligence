@@ -94,6 +94,34 @@ for tags_str in df["Tags"].dropna():
         existing_tags.add(tag)
 all_tags = sorted(set(PREDEFINED_TAGS + list(existing_tags)))
 
+# --- Hierarchical Filter Panel ---
+st.sidebar.header("🔍 Filter Data")
+counterparty_list = sorted(df["Counterparty"].dropna().unique())
+selected_counterparty = st.sidebar.selectbox("Select Counterparty", counterparty_list)
+
+filtered_df = df[df["Counterparty"] == selected_counterparty]
+
+point_types = filtered_df["Point Type"].dropna().unique().tolist()
+selected_point_type = st.sidebar.selectbox("Select Point Type", ["All"] + point_types)
+if selected_point_type != "All":
+    filtered_df = filtered_df[filtered_df["Point Type"] == selected_point_type]
+
+point_names = filtered_df["Point Name"].dropna().unique().tolist()
+selected_point_name = st.sidebar.selectbox("Select Point Name", ["All"] + point_names)
+if selected_point_name != "All":
+    filtered_df = filtered_df[filtered_df["Point Name"] == selected_point_name]
+
+tags_available = sorted(set(tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")))
+selected_tags = st.sidebar.multiselect("Filter by Tag", options=tags_available)
+if selected_tags:
+    filtered_df = filtered_df[
+        filtered_df["Tags"].apply(lambda x: any(tag in x for tag in selected_tags))
+    ]
+
+st.subheader(f"Filtered Results for: {selected_counterparty}")
+st.dataframe(filtered_df, use_container_width=True)
+
+
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 
@@ -196,77 +224,6 @@ if action_mode == "Add New":
         save_data(df)
         st.success("Information saved to Google Sheet!")
         st.rerun()
-
-# --- Hierarchical Filter Panel ---
-st.sidebar.header("🔍 Filter Data")
-counterparty_list = sorted(df["Counterparty"].dropna().unique())
-selected_counterparty = st.sidebar.selectbox("Select Counterparty", counterparty_list)
-
-filtered_df = df[df["Counterparty"] == selected_counterparty]
-
-point_types = filtered_df["Point Type"].dropna().unique().tolist()
-selected_point_type = st.sidebar.selectbox("Select Point Type", ["All"] + point_types)
-if selected_point_type != "All":
-    filtered_df = filtered_df[filtered_df["Point Type"] == selected_point_type]
-
-point_names = filtered_df["Point Name"].dropna().unique().tolist()
-selected_point_name = st.sidebar.selectbox("Select Point Name", ["All"] + point_names)
-if selected_point_name != "All":
-    filtered_df = filtered_df[filtered_df["Point Name"] == selected_point_name]
-
-tags_available = sorted(set(tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")))
-selected_tags = st.sidebar.multiselect("Filter by Tag", options=tags_available)
-if selected_tags:
-    filtered_df = filtered_df[
-        filtered_df["Tags"].apply(lambda x: any(tag in x for tag in selected_tags))
-    ]
-
-st.subheader(f"Filtered Results for: {selected_counterparty}")
-st.dataframe(filtered_df, use_container_width=True)
-
-        
-# --- Data Visualization & Insights ---
-st.markdown("### 📊 Data Insights")
-
-# Summary metrics
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Total Entries", len(filtered_df))
-with col2:
-    st.metric("Unique Points", filtered_df["Point Name"].nunique())
-with col3:
-    most_used_tag = "-"
-    if not filtered_df.empty:
-        all_tags_flat = [tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")]
-        if all_tags_flat:
-            most_used_tag = pd.Series(all_tags_flat).mode()[0]
-    st.metric("Most Used Tag", most_used_tag)
-
-# Entry trend over time
-filtered_df["Date Parsed"] = pd.to_datetime(filtered_df["Date"], errors="coerce")
-weekly_trend = filtered_df["Date Parsed"].dt.to_period("W").value_counts().sort_index()
-if not weekly_trend.empty:
-    st.markdown("#### ⏳ Weekly Entry Trend")
-    st.line_chart(weekly_trend)
-
-# Point Type and Point Name distributions
-col4, col5 = st.columns(2)
-with col4:
-    st.markdown("#### 🔁 Entry Count by Point Type")
-    st.bar_chart(filtered_df["Point Type"].value_counts())
-with col5:
-    st.markdown("#### 📍 Top 10 Points")
-    st.bar_chart(filtered_df["Point Name"].value_counts().head(10))
-
-# Tag frequency chart
-tag_counts = pd.Series(
-    [tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")]
-).value_counts()
-
-if not tag_counts.empty:
-    st.markdown("#### 🏷 Tag Frequency")
-    st.bar_chart(tag_counts.head(10))
-
 
 # --- Data Download (Backup) ---
 st.header("Download Data Snapshot / Backup")
