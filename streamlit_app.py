@@ -169,7 +169,7 @@ if action_mode == "Add New":
         matches = process.extract(tag, all_tags, scorer=fuzz.ratio, limit=3)
         close_matches = [m[0] for m in matches if m[1] > 70]  # threshold for similarity
     if close_matches:
-        st.caption(f"🔎 Suggestions for '{tag}': {', '.join(close_matches)}")
+        st.caption(f"Suggestions for '{tag}': {', '.join(close_matches)}")
     all_selected_tags = selected_tags + typed_tags
     tags_value = ", ".join(sorted(set(all_selected_tags)))
     name = st.text_input("Name (who did the change)")
