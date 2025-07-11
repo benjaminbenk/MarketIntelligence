@@ -188,7 +188,7 @@ if action_mode == "Add New":
             "Country": country,
             "Point Type": point_type,
             "Point Name": point_name,
-            "Date": date.strftime("%Y-%m-%d"),
+            "Date": date_repr,
             "Info": info,
             "Tags": tags_value
         }
