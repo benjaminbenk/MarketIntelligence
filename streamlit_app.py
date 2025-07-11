@@ -123,24 +123,53 @@ if action_mode == "Add New":
         point_name = "Entire Country"
 
     country = st.selectbox("Country", COUNTRIES_LIST)
-    date = st.date_input("Date", datetime.today())
+    date_mode = st.radio("Select Time Mode", ["Single Day", "Date Range", "Pre-defined tenor"])
+        if date_mode == "Single Day":
+            date = st.date_input("Date", datetime.today())
+            date_repr = date.strftime("%Y-%m-%d")
+
+        elif date_mode == "Date Range":
+            col1, col2 = st.columns(2)
+        with col1:
+            start_date = st.date_input("Start Date", datetime.today())
+        with col2:
+            end_date = st.date_input("End Date", datetime.today())
+        date_repr = f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+
+    else:
+        current_year = datetime.today().year
+        predefined_options = sorted([
+            f"{month.upper()[:3]}{str(year)[-2:]}" for year in range(current_year, current_year + 3) for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        ] + [
+            f"{str(year)[-2:]}Q{q}" for year in range(current_year, current_year + 3) for q in range(1, 5)
+        ] + [
+            f"{str(year)[-2:]}WIN" for year in range(current_year, current_year + 3)
+        ] + [
+            f"{str(year)[-2:]}SUM" for year in range(current_year, current_year + 3)
+        ] + [
+            f"CAL{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+        ] + [
+            f"GY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+        ] + [
+            f"SY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+        ])
+        date_code = st.selectbox("Select Period Code", predefined_options)
+        custom_code = st.text_input("Or enter custom period code (e.g. CUSTOM_BLOCK1)", "")
+        date_repr = custom_code if custom_code else date_code
+
     info = st.text_area("Info")
-from rapidfuzz import fuzz, process
-
-selected_tags = st.multiselect("Select existing tags", options=all_tags)
-
-custom_input = st.text_input("Or add custom tags (comma separated)")
-typed_tags = [t.strip() for t in custom_input.split(",") if t.strip()]
-
-# Suggest similar tags for each typed tag
-for tag in typed_tags:
+    from rapidfuzz import fuzz, process
+    selected_tags = st.multiselect("Select existing tags", options=all_tags)
+    custom_input = st.text_input("Or add custom tags (comma separated)")
+    typed_tags = [t.strip() for t in custom_input.split(",") if t.strip()]
+    # Suggest similar tags for each typed tag
+    for tag in typed_tags:
     matches = process.extract(tag, all_tags, scorer=fuzz.ratio, limit=3)
     close_matches = [m[0] for m in matches if m[1] > 70]  # threshold for similarity
     if close_matches:
         st.caption(f"🔎 Suggestions for '{tag}': {', '.join(close_matches)}")
-
-all_selected_tags = selected_tags + typed_tags
-tags_value = ", ".join(sorted(set(all_selected_tags)))
+    all_selected_tags = selected_tags + typed_tags
+    tags_value = ", ".join(sorted(set(all_selected_tags)))
     name = st.text_input("Name (who did the change)")
 
     if st.button("Save Entry"):
