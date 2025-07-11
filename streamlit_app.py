@@ -196,6 +196,34 @@ if action_mode == "Add New":
         save_data(df)
         st.success("Information saved to Google Sheet!")
         st.rerun()
+
+# --- Hierarchical Filter Panel ---
+st.sidebar.header("🔍 Filter Data")
+counterparty_list = sorted(df["Counterparty"].dropna().unique())
+selected_counterparty = st.sidebar.selectbox("Select Counterparty", counterparty_list)
+
+filtered_df = df[df["Counterparty"] == selected_counterparty]
+
+point_types = filtered_df["Point Type"].dropna().unique().tolist()
+selected_point_type = st.sidebar.selectbox("Select Point Type", ["All"] + point_types)
+if selected_point_type != "All":
+    filtered_df = filtered_df[filtered_df["Point Type"] == selected_point_type]
+
+point_names = filtered_df["Point Name"].dropna().unique().tolist()
+selected_point_name = st.sidebar.selectbox("Select Point Name", ["All"] + point_names)
+if selected_point_name != "All":
+    filtered_df = filtered_df[filtered_df["Point Name"] == selected_point_name]
+
+tags_available = sorted(set(tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")))
+selected_tags = st.sidebar.multiselect("Filter by Tag", options=tags_available)
+if selected_tags:
+    filtered_df = filtered_df[
+        filtered_df["Tags"].apply(lambda x: any(tag in x for tag in selected_tags))
+    ]
+
+st.subheader(f"Filtered Results for: {selected_counterparty}")
+st.dataframe(filtered_df, use_container_width=True)
+
         
 # --- Data Visualization & Insights ---
 st.markdown("### 📊 Data Insights")
