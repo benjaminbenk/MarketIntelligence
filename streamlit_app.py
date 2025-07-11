@@ -124,11 +124,11 @@ if action_mode == "Add New":
 
     country = st.selectbox("Country", COUNTRIES_LIST)
     date_mode = st.radio("Select Time Mode", ["Single Day", "Date Range", "Pre-defined tenor"])
-        if date_mode == "Single Day":
+    if date_mode == "Single Day":
             date = st.date_input("Date", datetime.today())
             date_repr = date.strftime("%Y-%m-%d")
 
-        elif date_mode == "Date Range":
+    elif date_mode == "Date Range":
             col1, col2 = st.columns(2)
         with col1:
             start_date = st.date_input("Start Date", datetime.today())
@@ -137,25 +137,25 @@ if action_mode == "Add New":
         date_repr = f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
 
     else:
-        current_year = datetime.today().year
-        predefined_options = sorted([
-            f"{month.upper()[:3]}{str(year)[-2:]}" for year in range(current_year, current_year + 3) for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        ] + [
-            f"{str(year)[-2:]}Q{q}" for year in range(current_year, current_year + 3) for q in range(1, 5)
-        ] + [
-            f"{str(year)[-2:]}WIN" for year in range(current_year, current_year + 3)
-        ] + [
-            f"{str(year)[-2:]}SUM" for year in range(current_year, current_year + 3)
-        ] + [
-            f"CAL{str(year)[-2:]}" for year in range(current_year, current_year + 3)
-        ] + [
-            f"GY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
-        ] + [
-            f"SY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
-        ])
-        date_code = st.selectbox("Select Period Code", predefined_options)
-        custom_code = st.text_input("Or enter custom period code (e.g. CUSTOM_BLOCK1)", "")
-        date_repr = custom_code if custom_code else date_code
+            current_year = datetime.today().year
+            predefined_options = sorted([
+                f"{month.upper()[:3]}{str(year)[-2:]}" for year in range(current_year, current_year + 3) for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            ] + [
+                f"{str(year)[-2:]}Q{q}" for year in range(current_year, current_year + 3) for q in range(1, 5)
+            ] + [
+                f"{str(year)[-2:]}WIN" for year in range(current_year, current_year + 3)
+            ] + [
+                f"{str(year)[-2:]}SUM" for year in range(current_year, current_year + 3)
+            ] + [
+                f"CAL{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+            ] + [
+                f"GY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+            ] + [
+                f"SY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+            ])
+            date_code = st.selectbox("Select Period Code", predefined_options)
+            custom_code = st.text_input("Or enter custom period code (e.g. CUSTOM_BLOCK1)", "")
+            date_repr = custom_code if custom_code else date_code
 
     info = st.text_area("Info")
     from rapidfuzz import fuzz, process
