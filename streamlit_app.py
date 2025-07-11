@@ -178,9 +178,8 @@ if action_mode == "Add New":
     name = st.text_input("Name (who did the change)")
 
     if st.button("Save Entry"):
-        if not name or not country or not point_name or not info:
-            st.error("Please complete all required fields (Name, Country, Point Name, Info).")
-            st.stop()
+        if not df.empty and ((df['Point Name'] == point_name) & (df['Date'] == date.strftime("%Y-%m-%d")) & (df['Counterparty'] == counterparty)).any():
+            st.warning("Looks like this entry already exists.")
 
         new_row = {
             "Name": name,
@@ -197,6 +196,49 @@ if action_mode == "Add New":
         save_data(df)
         st.success("Information saved to Google Sheet!")
         st.rerun()
+        
+# --- Data Visualization & Insights ---
+st.markdown("### 📊 Data Insights")
+
+# Summary metrics
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Total Entries", len(filtered_df))
+with col2:
+    st.metric("Unique Points", filtered_df["Point Name"].nunique())
+with col3:
+    most_used_tag = "-"
+    if not filtered_df.empty:
+        all_tags_flat = [tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")]
+        if all_tags_flat:
+            most_used_tag = pd.Series(all_tags_flat).mode()[0]
+    st.metric("Most Used Tag", most_used_tag)
+
+# Entry trend over time
+filtered_df["Date Parsed"] = pd.to_datetime(filtered_df["Date"], errors="coerce")
+weekly_trend = filtered_df["Date Parsed"].dt.to_period("W").value_counts().sort_index()
+if not weekly_trend.empty:
+    st.markdown("#### ⏳ Weekly Entry Trend")
+    st.line_chart(weekly_trend)
+
+# Point Type and Point Name distributions
+col4, col5 = st.columns(2)
+with col4:
+    st.markdown("#### 🔁 Entry Count by Point Type")
+    st.bar_chart(filtered_df["Point Type"].value_counts())
+with col5:
+    st.markdown("#### 📍 Top 10 Points")
+    st.bar_chart(filtered_df["Point Name"].value_counts().head(10))
+
+# Tag frequency chart
+tag_counts = pd.Series(
+    [tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")]
+).value_counts()
+
+if not tag_counts.empty:
+    st.markdown("#### 🏷 Tag Frequency")
+    st.bar_chart(tag_counts.head(10))
+
 
 # --- Data Download (Backup) ---
 st.header("Download Data Snapshot / Backup")
