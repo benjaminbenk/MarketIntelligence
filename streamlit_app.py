@@ -70,6 +70,11 @@ def append_history(action, row_data, old_data=None, comment=None, name=None):
     }
     history_sheet.append_row(list(record.values()))
 
+def generate_summary(row):
+    main_tag = row["Tags"].split(",")[0].strip() if row["Tags"] else "unspecified"
+    return f"🔹 {row['Info']} at **{row['Point Name']}** ({row['Point Type']}) from **{row['Counterparty']}** on **{row['Date']}** — tag: _{main_tag}_"
+
+
 # --- UI ---
 st.set_page_config(page_title="Gas Market Intelligence", layout="wide")
 st.title("CEE Gas Market Intelligence")
@@ -120,6 +125,12 @@ if selected_tags:
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 st.dataframe(filtered_df, use_container_width=True)
+with st.expander(f"📝 Summary of Entries for {selected_counterparty}"):
+    if filtered_df.empty:
+        st.info("No entries found for this selection.")
+    else:
+        for _, row in filtered_df.iterrows():
+            st.markdown(generate_summary(row))
 
 
 st.header("Add, Edit, Delete Info")
@@ -208,7 +219,15 @@ if action_mode == "Add New":
     if st.button("Save Entry"):
         if not df.empty and ((df['Point Name'] == point_name) & (df['Date'] == date.strftime("%Y-%m-%d")) & (df['Counterparty'] == counterparty)).any():
             st.warning("Looks like this entry already exists.")
+            
+            # --- Automatic summary generation ---
+def generate_summary(info, point_name, counterparty, date, tags):
+    tag_main = tags.split(",")[0] if tags else "unspecified"
+    return f"{info} at {point_name} from {counterparty} for {date} under '{tag_main.strip()}' tag."
 
+summary = generate_summary(info, point_name, counterparty, date_repr, tags_value)
+st.markdown(f"📝 **Generated Summary:** {summary}")
+            
         new_row = {
             "Name": name,
             "Counterparty": counterparty,
