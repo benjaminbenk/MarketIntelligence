@@ -221,28 +221,28 @@ if action_mode == "Add New":
             st.warning("Looks like this entry already exists.")
             
             # --- Automatic summary generation ---
-def generate_summary(info, point_name, counterparty, date, tags):
-    tag_main = tags.split(",")[0] if tags else "unspecified"
-    return f"{info} at {point_name} from {counterparty} for {date} under '{tag_main.strip()}' tag."
+        def generate_summary(info, point_name, counterparty, date, tags):
+            tag_main = tags.split(",")[0] if tags else "unspecified"
+            return f"{info} at {point_name} from {counterparty} for {date} under '{tag_main.strip()}' tag."
 
-summary = generate_summary(info, point_name, counterparty, date_repr, tags_value)
-st.markdown(f"📝 **Generated Summary:** {summary}")
-            
-        new_row = {
-            "Name": name,
-            "Counterparty": counterparty,
-            "Country": country,
-            "Point Type": point_type,
-            "Point Name": point_name,
-            "Date": date_repr,
-            "Info": info,
-            "Tags": tags_value
-        }
-        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-        append_history("create", new_row, name=name)
-        save_data(df)
-        st.success("Information saved to Google Sheet!")
-        st.rerun()
+        summary = generate_summary(info, point_name, counterparty, date_repr, tags_value)
+        st.markdown(f"📝 **Generated Summary:** {summary}")
+        else:    
+            new_row = {
+                "Name": name,
+                "Counterparty": counterparty,
+                "Country": country,
+                "Point Type": point_type,
+                "Point Name": point_name,
+                "Date": date_repr,
+                "Info": info,
+                "Tags": tags_value
+            }
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            append_history("create", new_row, name=name)
+            save_data(df)
+            st.success("Information saved to Google Sheet!")
+            st.rerun()
 
 # --- Data Download (Backup) ---
 st.header("Download Data Snapshot / Backup")
