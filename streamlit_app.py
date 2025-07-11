@@ -125,12 +125,25 @@ if selected_tags:
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 st.dataframe(filtered_df, use_container_width=True)
+
+group_option = st.selectbox("🗂 Group Summaries By", ["None", "Point Name", "Date"])
+
+if group_option == "None":
+    grouped = {"All Entries": filtered_df.itertuples()}
+elif group_option == "Point Name":
+    grouped = filtered_df.groupby("Point Name")
+elif group_option == "Date":
+    grouped = filtered_df.groupby("Date")
+
 with st.expander(f"📝 Summary of Entries for {selected_counterparty}"):
     if filtered_df.empty:
         st.info("No entries found for this selection.")
     else:
-        for _, row in filtered_df.iterrows():
-            st.markdown(generate_summary(row))
+        for group_key, group_rows in grouped.items() if group_option != "None" else grouped.items():
+            with st.expander(f"📍 {group_option}: {group_key}", expanded=True):
+                for row in group_rows:
+                    with st.chat_message("info"):
+                        st.markdown(generate_summary(row))
 
 
 st.header("Add, Edit, Delete Info")
@@ -217,15 +230,14 @@ if action_mode == "Add New":
     name = st.text_input("Name (who did the change)")
 
 # --- Automatic summary generation function ---
-def generate_summary(info, point_name, counterparty, date, tags):
-    tag_main = tags.split(",")[0] if tags else "unspecified"
-    return f"{info} at {point_name} from {counterparty} for {date} under '{tag_main.strip()}' tag."
+def generate_summary(info, point_name, counterparty, date):
+    return f"{info} at {point_name} from {counterparty} for {date}"
 
 if st.button("Save Entry"):
     if not df.empty and ((df['Point Name'] == point_name) & (df['Date'] == date_repr) & (df['Counterparty'] == counterparty)).any():
         st.warning("Looks like this entry already exists.")
         
-        summary = generate_summary(info, point_name, counterparty, date_repr, tags_value)
+        summary = generate_summary(info, point_name, counterparty, date_repr)
         st.markdown(f"📝 **Generated Summary:** {summary}")
     
     else:
