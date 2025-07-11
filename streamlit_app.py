@@ -181,9 +181,6 @@ if action_mode == "Add New":
         if not name or not country or not point_name or not info:
             st.error("Please complete all required fields (Name, Country, Point Name, Info).")
             st.stop()
-        if not df.empty and (df['Name'] == name).any():
-            st.error("This Name already exists! Please choose a unique Name.")
-            st.stop()
 
         new_row = {
             "Name": name,
