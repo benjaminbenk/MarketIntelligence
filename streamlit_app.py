@@ -81,7 +81,7 @@ def generate_summary_row(row):
     info = getattr(row, "Info", "") if hasattr(row, "Info") else row.get("Info", "")
     name = getattr(row, "Name", "") if hasattr(row, "Name") else row.get("Name", "")
 
-    return f"🔹 {info} at **{point_name}** ({point_type}) from **{counterparty}** on **{date}** — name: _{name}_"
+    return f"🔹 {info} at **{point_name}** ({point_type}) from **{counterparty}** on **{date}** — source: _{name}_"
 
 
 
