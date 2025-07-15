@@ -193,15 +193,18 @@ if st.session_state.unified_search:
 
     filtered_df = filtered_df[filtered_df.apply(row_matches_any_field, axis=1)]
 
-# Clear Selection: reset every filter + search back to defaults
 if st.sidebar.button("Clear Selection"):
-    st.session_state.selected_counterparty = "All"
-    st.session_state.selected_point_type   = "All"
-    st.session_state.selected_point_name   = "All"
-    st.session_state.selected_tags         = []
-    st.session_state.unified_search        = ""
-    # also hide any open modal
-    st.session_state.show_entry_modal      = False
+    # Remove each filter/search key from session_state:
+    for key in [
+        "selected_counterparty",
+        "selected_point_type",
+        "selected_point_name",
+        "selected_tags",
+        "unified_search",
+        "show_entry_modal",
+        "modal_row"
+    ]:
+        st.session_state.pop(key, None)
     st.experimental_rerun()
     
 st.subheader(f"Filtered Results for: {selected_counterparty}")
