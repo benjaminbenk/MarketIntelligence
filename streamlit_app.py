@@ -171,36 +171,33 @@ if st.session_state.get("show_entry_modal", False):
     row = st.session_state.modal_row
     st.markdown(f"""
     <style>
-      .modal-overlay {{
+      .modal-content {
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(0,0,0,0.6);
-        z-index: 9998;
-      }}
-      .modal-content {{
-        position: fixed;
-        top: 10%;               /* 10% down from top */
-        left: 50%;              /* center horizontally */
+        top: 10%;
+        left: 50%;
         transform: translateX(-50%);
         background: #fff;
+        /* add this */  
+        color: black;
         padding: 2rem;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         max-width: 500px; width: 90%;
         z-index: 9999;
-      }}
-      .modal-content h3 {{ margin-top: 0; }}
-      .modal-content p {{ margin: 0.5rem 0; }}
-      .modal-close {{
+      }
+      .modal-content h3 { margin-top: 0; }
+      .modal-content p { margin: 0.5rem 0; }
+      .modal-close {
         display: inline-block;
         margin-top: 1rem;
         padding: 0.5rem 1rem;
         background: #eee;
         border-radius: 4px;
         text-decoration: none;
+        /* also ensure the link text is black */
         color: black;
         font-weight: bold;
-      }}
+      }
     </style>
 
     <div class="modal-overlay"></div>
