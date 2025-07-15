@@ -182,16 +182,15 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state["modal_row"]
 
-    # Render modal overlay and content
-    st.markdown("""
+    st.markdown(f"""
         <style>
-        .modal-overlay {
+        .modal-overlay {{
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
             background-color: rgba(0, 0, 0, 0.6);
             z-index: 9998;
-        }
-        .modal-content {
+        }}
+        .modal-content {{
             position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -202,27 +201,34 @@ if st.session_state.get("show_entry_modal", False):
             z-index: 9999;
             max-width: 600px;
             width: 90%;
-        }
+        }}
         </style>
 
         <div class="modal-overlay" id="modalOverlay"></div>
         <div class="modal-content" id="modalContent">
-        """, unsafe_allow_html=True)
+            <h3>🔎 Information Details – {row['Point Name']}</h3>
+            <p><strong>Counterparty:</strong> {row['Counterparty']}</p>
+            <p><strong>Point Name:</strong> {row['Point Name']}</p>
+            <p><strong>Time Horizon:</strong> {row['Date']}</p>
+            <p><strong>Country:</strong> {row['Country']}</p>
+            <p><strong>Info:</strong> {row['Info']}</p>
+            <p><strong>Capacity:</strong> {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}</p>
+            <p><strong>Volume:</strong> {row.get('Volume Value', '')} {row.get('Volume Unit', '')}</p>
+            <p><strong>Source:</strong> {row['Name']}</p>
+        </div>
 
-    # JS to detect click outside modal and update query param (which triggers rerun)
-    st.markdown("""
         <script>
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function(event) {{
             const modal = document.getElementById('modalContent');
-            const overlay = document.getElementById('modalOverlay');
-            if (modal && !modal.contains(event.target)) {
+            if (modal && !modal.contains(event.target)) {{
                 const url = new URL(window.location);
                 url.searchParams.set('close_modal', '1');
-                window.location.href = url.toString();  // triggers rerun
-            }
-        }, { once: true });
+                window.location.href = url.toString();
+            }}
+        }}, {{ once: true }});
         </script>
-        """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
 
     # Modal content via Streamlit
     st.markdown(f"### 🔎 Information Details – {row['Point Name']}")
