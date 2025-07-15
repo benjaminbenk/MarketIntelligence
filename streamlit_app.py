@@ -133,16 +133,8 @@ if selected_tags:
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 st.dataframe(filtered_df, use_container_width=True)
 
-group_option = st.selectbox("🗂 Group Summaries By", ["None", "Point Name", "Date"])
 
-if group_option == "None":
-    grouped = {"All Entries": filtered_df.itertuples()}
-elif group_option == "Point Name":
-    grouped = filtered_df.groupby("Point Name")
-elif group_option == "Date":
-    grouped = filtered_df.groupby("Date")
-
-with st.expander(f"📝 Summary of Entries for {selected_counterparty}"):
+st.expander(f"📝 Summary of Entries for {selected_counterparty}"):
     if filtered_df.empty:
         st.info("No entries found for this selection.")
     else:
