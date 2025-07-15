@@ -122,53 +122,47 @@ if params.get("close_modal") == ["1"]:
 # --- Hierarchical Filter Panel ---
 st.sidebar.header("🔍 Filter Data")
 
-# --- Counterparty Filter with "All" ---
+# Counterparty Filter
 counterparty_list = sorted(df["Counterparty"].dropna().unique().tolist())
-selected_counterparty = st.sidebar.selectbox("Select Counterparty", ["All"] + counterparty_list)
+selected_counterparty = st.sidebar.selectbox(
+    "Select Counterparty",
+    ["All"] + counterparty_list,
+    key="selected_counterparty"
+)
 
-filtered_df = df.copy()
-if selected_counterparty != "All":
-    filtered_df = filtered_df[filtered_df["Counterparty"] == selected_counterparty]
-
-# --- Point Type Filter with "All" ---
+# Point Type Filter
 point_types = filtered_df["Point Type"].dropna().unique().tolist()
-selected_point_type = st.sidebar.selectbox("Select Point Type", ["All"] + point_types)
-if selected_point_type != "All":
-    filtered_df = filtered_df[filtered_df["Point Type"] == selected_point_type]
+selected_point_type = st.sidebar.selectbox(
+    "Select Point Type",
+    ["All"] + point_types,
+    key="selected_point_type"
+)
 
-# --- Point Name Filter with "All" ---
+# Point Name Filter
 point_names = filtered_df["Point Name"].dropna().unique().tolist()
-selected_point_name = st.sidebar.selectbox("Select Point Name", ["All"] + point_names)
-if selected_point_name != "All":
-    filtered_df = filtered_df[filtered_df["Point Name"] == selected_point_name]
+selected_point_name = st.sidebar.selectbox(
+    "Select Point Name",
+    ["All"] + point_names,
+    key="selected_point_name"
+)
 
-# --- Tags Filter ---
-tags_available = sorted(set(tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")))
-selected_tags = st.sidebar.multiselect("Filter by Tag", options=tags_available)
-if selected_tags:
-    filtered_df = filtered_df[
-        filtered_df["Tags"].apply(lambda x: any(tag in x for tag in selected_tags))
-    ]
+# Tags Filter
+tags_available = sorted(set(
+    tag.strip()
+    for tags in filtered_df["Tags"].dropna()
+    for tag in tags.split(",")
+))
+selected_tags = st.sidebar.multiselect(
+    "Filter by Tag",
+    options=tags_available,
+    key="selected_tags"
+)
 
-# --- Universal Search Box (Allrounder) ---
-unified_search = st.sidebar.text_input("Search All Fields")
-
-if unified_search:
-    search_lower = unified_search.lower()
-
-    def row_matches_any_field(row):
-        fields_to_search = [
-            str(row.get("Info", "")),
-            str(row.get("Country", "")),
-            str(row.get("Point Name", "")),
-            str(row.get("Point Type", "")),
-            str(row.get("Counterparty", "")),
-            str(row.get("Date", "")),
-            str(row.get("Tags", ""))
-        ]
-        return any(search_lower in field.lower() for field in fields_to_search)
-
-    filtered_df = filtered_df[filtered_df.apply(row_matches_any_field, axis=1)]
+# Universal Search Box
+unified_search = st.sidebar.text_input(
+    "Search All Fields",
+    key="unified_search"
+)
 
 # Clear Selection: reset everything
 if st.sidebar.button("Clear Selection"):
