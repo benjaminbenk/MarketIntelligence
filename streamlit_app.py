@@ -237,24 +237,10 @@ if st.session_state.get("show_entry_modal", False):
     st.markdown(f"**Info**: {row['Info']}")
     st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
     st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-    st.markdown("""
-        <p style="text-align: right; margin-top: 2rem;">
-            <a href="?close_modal=1" style="
-                background-color: #444;
-                color: black;
-                padding: 8px 16px;
-                text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-            ">⬅️ Back to Summary</a>
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+   st.markdown("</div>", unsafe_allow_html=True)  # closes modal-content
 
-# Check if query param signals modal close
-if st.query_params.get("close_modal") == "1":
+if st.button("⬅️ Back to Summary", key="close_modal_btn"):
     st.session_state["show_entry_modal"] = False
-    st.experimental_set_query_params()
     st.rerun()
 
 
