@@ -70,9 +70,18 @@ def append_history(action, row_data, old_data=None, comment=None, name=None):
     }
     history_sheet.append_row(list(record.values()))
 
-def generate_summary(row):
-    main_tag = row["Tags"].split(",")[0].strip() if row["Tags"] else "unspecified"
-    return f"🔹 {row['Info']} at **{row['Point Name']}** ({row['Point Type']}) from **{row['Counterparty']}** on **{row['Date']}** — tag: _{main_tag}_"
+def generate_summary_row(row):
+    tags_value = getattr(row, "Tags", "") if hasattr(row, "Tags") else row.get("Tags", "")
+    main_tag = tags_value.split(",")[0].strip() if tags_value else "unspecified"
+
+    point_name = getattr(row, "Point Name", "") if hasattr(row, "Point Name") else row.get("Point Name", "")
+    point_type = getattr(row, "Point Type", "") if hasattr(row, "Point Type") else row.get("Point Type", "")
+    counterparty = getattr(row, "Counterparty", "") if hasattr(row, "Counterparty") else row.get("Counterparty", "")
+    date = getattr(row, "Date", "") if hasattr(row, "Date") else row.get("Date", "")
+    info = getattr(row, "Info", "") if hasattr(row, "Info") else row.get("Info", "")
+
+    return f"🔹 {info} at **{point_name}** ({point_type}) from **{counterparty}** on **{date}** — tag: _{main_tag}_"
+
 
 
 # --- UI ---
