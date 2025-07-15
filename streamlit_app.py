@@ -162,19 +162,6 @@ if unified_search:
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 
-
-with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
-    if filtered_df.empty:
-        st.info("No entries found for this selection.")
-    else:
-        for idx, row in filtered_df.iterrows():
-            col1, col2 = st.columns([0.95, 0.05])
-            with col1:
-                st.markdown(generate_summary_row(row))
-            with col2:
-                if st.button("i", key=f"view_{idx}"):
-                    st.session_state["selected_entry"] = row.to_dict()
-
 # --- Single Entry Detail Viewer ---
 st.subheader("🔎 View Full Details of a Selected Entry")
 
@@ -192,7 +179,17 @@ if "selected_entry" in st.session_state:
         st.markdown(f"**Tags**: {row['Tags']}")
         st.markdown(f"**Source**: {row['Name']}")
 
-
+with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
+    if filtered_df.empty:
+        st.info("No entries found for this selection.")
+    else:
+        for idx, row in filtered_df.iterrows():
+            col1, col2 = st.columns([0.95, 0.05])
+            with col1:
+                st.markdown(generate_summary_row(row))
+            with col2:
+                if st.button("i", key=f"view_{idx}"):
+                    st.session_state["selected_entry"] = row.to_dict()
 
 
 st.header("Add, Edit, Delete Info")
