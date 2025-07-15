@@ -109,6 +109,15 @@ for tags_str in df["Tags"].dropna():
         existing_tags.add(tag)
 all_tags = sorted(set(PREDEFINED_TAGS + list(existing_tags)))
 
+params = st.query_params
+if params.get("close_modal") == ["1"]:
+    st.session_state.show_entry_modal = False
+    # strip close_modal from the URL, keep other filters
+    new_params = {k: v for k, v in params.items() if k != "close_modal"}
+    # flatten lists for urlencode
+    flat = {k: (v if isinstance(v, str) else v[0]) for k, v in new_params.items()}
+    st.set_query_params(**flat)
+
 # --- Hierarchical Filter Panel ---
 st.sidebar.header("🔍 Filter Data")
 
@@ -165,30 +174,21 @@ if st.sidebar.button("Clear Selection"):
     st.session_state["show_details"] = False
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
-
-# 1) Detect “close_modal” in the URL and clear the modal flag,
-#    then reset the URL to *only* your filter params (removing close_modal).
-params = st.query_params
-if params.get("close_modal") == ["1"]:
-    st.session_state.show_entry_modal = False
-
-    # Rebuild params minus close_modal
-    new_params = {k: v for k, v in params.items() if k != "close_modal"}
-    # Flatten lists to single values for urlencode
-    flat = {k: (v if isinstance(v, str) else v[0]) for k, v in new_params.items()}
-    st.set_query_params(**flat)
-
     
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state.modal_row
 
-    # Notice: everything from <style>...</style> and your divs is INSIDE the """..."""!
+    # build close_href that keeps existing filters + close_modal=1
+    close_params = {**st.query_params, "close_modal": "1"}
+    flat_close = {k: (v if isinstance(v, str) else v[0]) for k, v in close_params.items()}
+    close_href = "?" + urlencode(flat_close)
+
     modal_html = f"""
     <style>
       .modal-overlay {{
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(0,0,0,0.6);
+        background: rgba(0,0,0,0.6);
         z-index: 9998;
       }}
       .modal-content {{
@@ -197,12 +197,11 @@ if st.session_state.get("show_entry_modal", False):
         left: 50%;
         transform: translateX(-50%);
         background: #fff;
-        color: black;              /* ensure text is black */
+        color: black;
         padding: 2rem;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        max-width: 500px;
-        width: 90%;
+        max-width: 500px; width: 90%;
         z-index: 9999;
       }}
       .modal-content h3 {{ margin-top: 0; }}
@@ -213,7 +212,7 @@ if st.session_state.get("show_entry_modal", False):
         padding: 0.5rem 1rem;
         background: #eee;
         border-radius: 4px;
-        color: black;            /* link text black too */
+        color: black;
         text-decoration: none;
         font-weight: bold;
       }}
@@ -229,13 +228,13 @@ if st.session_state.get("show_entry_modal", False):
       <p><strong>Capacity:</strong> {row.get('Capacity Value','N/A')} {row.get('Capacity Unit','')}</p>
       <p><strong>Volume:</strong> {row.get('Volume Value','N/A')} {row.get('Volume Unit','')}</p>
       <p><strong>Source:</strong> {row.get('Name','N/A')}</p>
-      <a href="#" class="modal-close" onclick="window.parent.location.reload();">
+      <!-- real link that reloads with close_modal=1 -->
+      <a href="{close_href}" class="modal-close">
         ⬅️ Back to Summary
       </a>
     </div>
     """
 
-    # Now render it all at once
     st.markdown(modal_html, unsafe_allow_html=True)
 
 with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expanded=True):
