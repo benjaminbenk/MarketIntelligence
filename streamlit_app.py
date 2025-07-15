@@ -224,21 +224,27 @@ if st.session_state.get("show_entry_modal", False):
 
     <div class="overlay"></div>
     <div class="modal-box">
-        <form method="post">
-            <button type="submit" name="close_modal" class="close-button">×</button>
-        </form>
-        <h3>🔎 Entry Details – """ + row["Point Name"] + """</h3>
-        <p><strong>Counterparty:</strong> """ + row["Counterparty"] + """</p>
-        <p><strong>Point Name:</strong> """ + row["Point Name"] + """</p>
-        <p><strong>Time Horizon:</strong> """ + row["Date"] + """</p>
-        <p><strong>Country:</strong> """ + row["Country"] + """</p>
-        <p><strong>Info:</strong> """ + row["Info"] + """</p>
-        <p><strong>Capacity:</strong> """ + str(row.get("Capacity Value", "")) + " " + str(row.get("Capacity Unit", "")) + """</p>
-        <p><strong>Volume:</strong> """ + str(row.get("Volume Value", "")) + " " + str(row.get("Volume Unit", "")) + """</p>
-        <p><strong>Tags:</strong> """ + row["Tags"] + """</p>
-        <p><strong>Source:</strong> """ + row["Name"] + """</p>
-    </div>
     """, unsafe_allow_html=True)
+
+    # X button – Streamlit native
+    close_col1, close_col2 = st.columns([0.9, 0.1])
+    with close_col2:
+        if st.button("✖", key="close_modal_button"):
+            st.session_state["show_entry_modal"] = False
+            st.rerun()
+
+    st.markdown(f"### 🔎 Entry Details – {row['Point Name']}")
+    st.markdown(f"**Counterparty**: {row['Counterparty']}")
+    st.markdown(f"**Point Name**: {row['Point Name']}")
+    st.markdown(f"**Time Horizon**: {row['Date']}")
+    st.markdown(f"**Country**: {row['Country']}")
+    st.markdown(f"**Info**: {row['Info']}")
+    st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
+    st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
+    st.markdown(f"**Tags**: {row['Tags']}")
+    st.markdown(f"**Source**: {row['Name']}")
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.get("close_modal"):
         st.session_state["show_entry_modal"] = False
@@ -328,19 +334,19 @@ if action_mode == "Add New":
         if close_matches:
             st.caption(f"Suggestions for '{tag}': {', '.join(close_matches)}")
 
-    # --- Capacity ---
-col1, col2 = st.columns([2, 1])
-with col1:
-    capacity_value = st.number_input("Capacity", min_value=0.0, step=0.1)
-with col2:
-    capacity_unit = st.selectbox("Unit", ["kWh/h", "MWh/h", "GWh/h", "m³/h"])
-
-# --- Volume ---
-col3, col4 = st.columns([2, 1])
-with col3:
-    volume_value = st.number_input("Volume", min_value=0.0, step=0.1)
-with col4:
-    volume_unit = st.selectbox("Unit", ["MW", "MWh", "GW", "GWh"])
+            # --- Capacity ---
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            capacity_value = st.number_input("Capacity", min_value=0.0, step=0.1)
+        with col2:
+            capacity_unit = st.selectbox("Unit", ["kWh/h", "MWh/h", "GWh/h", "m³/h"])
+        
+        # --- Volume ---
+        col3, col4 = st.columns([2, 1])
+        with col3:
+            volume_value = st.number_input("Volume", min_value=0.0, step=0.1)
+        with col4:
+            volume_unit = st.selectbox("Unit", ["MW", "MWh", "GW", "GWh"])
 
     all_selected_tags = selected_tags + typed_tags
     tags_value = ", ".join(sorted(set(all_selected_tags)))
