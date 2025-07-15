@@ -180,38 +180,87 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
                     st.session_state["modal_row"] = {k.strip(): v for k, v in row.to_dict().items()}
                     st.rerun()
 
-import streamlit as st
-
-# Utility to open the modal
+# Helper to open the “modal”
 def show_details(row):
     st.session_state.modal_row = row
     st.session_state.show_entry_modal = True
 
-# Somewhere in your summary view:
+# Your “summary” view; replace with your own table/button logic
 if st.button("🔍 Show Details"):
-    # pass in whatever row dict you want to inspect
-    show_details({"Point Name":"Alpha", "Counterparty":"Foo Corp", "Date":"2025‑07‑15",
-                  "Country":"HU","Info":"Some info","Capacity Value":123,"Capacity Unit":"MW",
-                  "Volume Value":456,"Volume Unit":"MWh","Name":"Source X"})
+    show_details({
+        "Point Name":     "Alpha",
+        "Counterparty":   "Foo Corp",
+        "Date":           "2025‑07‑15",
+        "Country":        "Hungary",
+        "Info":           "Some useful info…",
+        "Capacity Value": 123,
+        "Capacity Unit":  "MW",
+        "Volume Value":   456,
+        "Volume Unit":    "MWh",
+        "Name":           "Source X"
+    })
 
-# The modal itself
+# If the flag is set, render one big HTML blob as an iframe
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state.modal_row
 
-    # `with st.modal(...)` automatically creates an overlay + dialog
-    with st.modal(f"🔎 Information Details – {row.get('Point Name','N/A')}", key="info_modal"):
-        st.markdown(f"**Counterparty:** {row.get('Counterparty','N/A')}")
-        st.markdown(f"**Point Name:** {row.get('Point Name','N/A')}")
-        st.markdown(f"**Time Horizon:** {row.get('Date','N/A')}")
-        st.markdown(f"**Country:** {row.get('Country','N/A')}")
-        st.markdown(f"**Info:** {row.get('Info','N/A')}")
-        st.markdown(f"**Capacity:** {row.get('Capacity Value','N/A')} {row.get('Capacity Unit','')}")
-        st.markdown(f"**Volume:** {row.get('Volume Value','N/A')} {row.get('Volume Unit','')}")
-        st.markdown(f"**Source:** {row.get('Name','N/A')}")
-        # a close button inside the modal
-        if st.button("⬅️ Back to Summary", key="close_modal_btn"):
-            st.session_state.show_entry_modal = False
-            st.experimental_rerun()
+    html = f"""
+    <style>
+      .modal-overlay {{
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 9998;
+      }}
+      .modal-content {{
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        z-index: 9999;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      }}
+      .modal-content h3 {{ margin-top: 0; }}
+      .modal-content p {{ margin: 0.5rem 0; }}
+      .modal-close {{
+        margin-top: 1rem;
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #eee;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        color: #333;
+      }}
+    </style>
+
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <h3>🔎 Information Details – {row.get('Point Name','N/A')}</h3>
+      <p><strong>Counterparty:</strong> {row.get('Counterparty','N/A')}</p>
+      <p><strong>Point Name:</strong> {row.get('Point Name','N/A')}</p>
+      <p><strong>Time Horizon:</strong> {row.get('Date','N/A')}</p>
+      <p><strong>Country:</strong> {row.get('Country','N/A')}</p>
+      <p><strong>Info:</strong> {row.get('Info','N/A')}</p>
+      <p><strong>Capacity:</strong> {row.get('Capacity Value','N/A')} {row.get('Capacity Unit','')}</p>
+      <p><strong>Volume:</strong> {row.get('Volume Value','N/A')} {row.get('Volume Unit','')}</p>
+      <p><strong>Source:</strong> {row.get('Name','N/A')}</p>
+      <a href="#" class="modal-close" onclick="
+         // hide the modal by unmounting the component
+         window.parent.location.reload();
+      ">⬅️ Back to Summary</a>
+    </div>
+    """
+
+    # Render your modal HTML inside an iframe‐like component
+    components.html(html, height=600, scrolling=False)
+
+    # Clear the flag immediately so reload actually hides it
+    st.session_state.show_entry_modal = False
 
 
 st.header("Add, Edit, Delete Info")
