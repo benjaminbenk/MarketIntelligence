@@ -122,58 +122,88 @@ if params.get("close_modal") == ["1"]:
 # --- Hierarchical Filter Panel ---
 st.sidebar.header("🔍 Filter Data")
 
-# --- Counterparty Filter with "All" ---
+# Counterparty Filter
 counterparty_list = sorted(df["Counterparty"].dropna().unique().tolist())
-selected_counterparty = st.sidebar.selectbox("Select Counterparty", ["All"] + counterparty_list)
+selected_counterparty = st.sidebar.selectbox(
+    "Select Counterparty",
+    ["All"] + counterparty_list,
+    key="selected_counterparty"
+)
 
+# Point Type Filter
+# (apply the counterparty filter first so the list updates)
 filtered_df = df.copy()
-if selected_counterparty != "All":
-    filtered_df = filtered_df[filtered_df["Counterparty"] == selected_counterparty]
+if st.session_state.selected_counterparty != "All":
+    filtered_df = filtered_df[filtered_df["Counterparty"] == st.session_state.selected_counterparty]
 
-# --- Point Type Filter with "All" ---
-point_types = filtered_df["Point Type"].dropna().unique().tolist()
-selected_point_type = st.sidebar.selectbox("Select Point Type", ["All"] + point_types)
-if selected_point_type != "All":
-    filtered_df = filtered_df[filtered_df["Point Type"] == selected_point_type]
+point_types = sorted(filtered_df["Point Type"].dropna().unique().tolist())
+selected_point_type = st.sidebar.selectbox(
+    "Select Point Type",
+    ["All"] + point_types,
+    key="selected_point_type"
+)
+if st.session_state.selected_point_type != "All":
+    filtered_df = filtered_df[filtered_df["Point Type"] == st.session_state.selected_point_type]
 
-# --- Point Name Filter with "All" ---
-point_names = filtered_df["Point Name"].dropna().unique().tolist()
-selected_point_name = st.sidebar.selectbox("Select Point Name", ["All"] + point_names)
-if selected_point_name != "All":
-    filtered_df = filtered_df[filtered_df["Point Name"] == selected_point_name]
+# Point Name Filter
+point_names = sorted(filtered_df["Point Name"].dropna().unique().tolist())
+selected_point_name = st.sidebar.selectbox(
+    "Select Point Name",
+    ["All"] + point_names,
+    key="selected_point_name"
+)
+if st.session_state.selected_point_name != "All":
+    filtered_df = filtered_df[filtered_df["Point Name"] == st.session_state.selected_point_name]
 
-# --- Tags Filter ---
-tags_available = sorted(set(tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")))
-selected_tags = st.sidebar.multiselect("Filter by Tag", options=tags_available)
-if selected_tags:
+# Tags Filter
+tags_available = sorted({
+    tag.strip()
+    for tags in filtered_df["Tags"].dropna()
+    for tag in tags.split(",")
+})
+selected_tags = st.sidebar.multiselect(
+    "Filter by Tag",
+    options=tags_available,
+    key="selected_tags"
+)
+if st.session_state.selected_tags:
     filtered_df = filtered_df[
-        filtered_df["Tags"].apply(lambda x: any(tag in x for tag in selected_tags))
+        filtered_df["Tags"].apply(lambda x: any(tag in x for tag in st.session_state.selected_tags))
     ]
 
-# --- Universal Search Box (Allrounder) ---
-unified_search = st.sidebar.text_input("Search All Fields")
-
-if unified_search:
-    search_lower = unified_search.lower()
+# Universal Search Box
+unified_search = st.sidebar.text_input(
+    "Search All Fields",
+    key="unified_search"
+)
+if st.session_state.unified_search:
+    search_lower = st.session_state.unified_search.lower()
 
     def row_matches_any_field(row):
-        fields_to_search = [
-            str(row.get("Info", "")),
-            str(row.get("Country", "")),
-            str(row.get("Point Name", "")),
-            str(row.get("Point Type", "")),
-            str(row.get("Counterparty", "")),
-            str(row.get("Date", "")),
-            str(row.get("Tags", ""))
+        fields = [
+            str(row.get("Info","")),
+            str(row.get("Country","")),
+            str(row.get("Point Name","")),
+            str(row.get("Point Type","")),
+            str(row.get("Counterparty","")),
+            str(row.get("Date","")),
+            str(row.get("Tags",""))
         ]
-        return any(search_lower in field.lower() for field in fields_to_search)
+        return any(search_lower in field.lower() for field in fields)
 
     filtered_df = filtered_df[filtered_df.apply(row_matches_any_field, axis=1)]
 
+# Clear Selection: reset every filter + search back to defaults
 if st.sidebar.button("Clear Selection"):
-    st.session_state.pop("selected_entry", None)
-    st.session_state["show_details"] = False
-
+    st.session_state.selected_counterparty = "All"
+    st.session_state.selected_point_type   = "All"
+    st.session_state.selected_point_name   = "All"
+    st.session_state.selected_tags         = []
+    st.session_state.unified_search        = ""
+    # also hide any open modal
+    st.session_state.show_entry_modal      = False
+    st.experimental_rerun()
+    
 st.subheader(f"Filtered Results for: {selected_counterparty}")
     
 if st.session_state.get("show_entry_modal", False):
