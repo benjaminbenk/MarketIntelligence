@@ -189,66 +189,62 @@ if st.session_state.get("show_entry_modal", False):
 
     st.markdown("""
     <style>
-    .modal-overlay {
+    .overlay {
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(0, 0, 0, 0.6);
+        background-color: rgba(0, 0, 0, 0.7);
         z-index: 1000;
     }
-    .modal-content {
+    .modal-box {
         position: fixed;
-        top: 50%; left: 50%;
+        top: 50%;
+        left: 50%;
         transform: translate(-50%, -50%);
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
+        background: #fff;
+        color: #000;
+        padding: 2rem;
+        border-radius: 10px;
         width: 90%;
         max-width: 600px;
         z-index: 1001;
-        box-shadow: 0px 0px 20px rgba(0,0,0,0.3);
+        box-shadow: 0px 0px 30px rgba(0,0,0,0.5);
     }
-    .modal-close-button {
+    .close-button {
         position: absolute;
-        top: 12px;
+        top: 10px;
         right: 16px;
         font-size: 22px;
-        color: #666;
-        cursor: pointer;
-        border: none;
+        font-weight: bold;
+        color: #555;
         background: none;
+        border: none;
+        cursor: pointer;
     }
     </style>
+
+    <div class="overlay"></div>
+    <div class="modal-box">
+        <form method="post">
+            <button type="submit" name="close_modal" class="close-button">×</button>
+        </form>
+        <h3>🔎 Entry Details – """ + row["Point Name"] + """</h3>
+        <p><strong>Counterparty:</strong> """ + row["Counterparty"] + """</p>
+        <p><strong>Point Name:</strong> """ + row["Point Name"] + """</p>
+        <p><strong>Time Horizon:</strong> """ + row["Date"] + """</p>
+        <p><strong>Country:</strong> """ + row["Country"] + """</p>
+        <p><strong>Info:</strong> """ + row["Info"] + """</p>
+        <p><strong>Capacity:</strong> """ + str(row.get("Capacity Value", "")) + " " + str(row.get("Capacity Unit", "")) + """</p>
+        <p><strong>Volume:</strong> """ + str(row.get("Volume Value", "")) + " " + str(row.get("Volume Unit", "")) + """</p>
+        <p><strong>Tags:</strong> """ + row["Tags"] + """</p>
+        <p><strong>Source:</strong> """ + row["Name"] + """</p>
+    </div>
     """, unsafe_allow_html=True)
 
-    with st.container():
-        st.markdown('<div class="modal-overlay"></div>', unsafe_allow_html=True)
-        st.markdown('<div class="modal-content">', unsafe_allow_html=True)
-
-        # ❌ Close button
-        col1, col2 = st.columns([0.9, 0.1])
-        with col2:
-            if st.button("✖", key="close_modal_button"):
-                st.session_state["show_entry_modal"] = False
-                st.rerun()
-
-        # 🔎 Entry details
-        st.markdown(f"### 🔎 Entry Details – {row['Point Name']}")
-        st.markdown(f"**Counterparty**: {row['Counterparty']}")
-        st.markdown(f"**Point Name**: {row['Point Name']}")
-        st.markdown(f"**Time Horizon**: {row['Date']}")
-        st.markdown(f"**Country**: {row['Country']}")
-        st.markdown(f"**Info**: {row['Info']}")
-        st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
-        st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-        st.markdown(f"**Tags**: {row['Tags']}")
-        st.markdown(f"**Source**: {row['Name']}")
-
-        st.markdown('</div>', unsafe_allow_html=True)  # close modal-content
-
-    # Streamlit side – ha rányom a rejtett "close" gombra
-    if "close-modal" in st.session_state or st.session_state.get("close-modal"):
+    if st.session_state.get("close_modal"):
         st.session_state["show_entry_modal"] = False
+        st.session_state["close_modal"] = False
         st.rerun()
+
 
 
 st.header("Add, Edit, Delete Info")
