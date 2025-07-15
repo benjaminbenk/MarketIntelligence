@@ -179,27 +179,6 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
                     st.session_state["show_entry_modal"] = True
                     st.session_state["modal_row"] = {k.strip(): v for k, v in row.to_dict().items()}
                     st.rerun()
-
-# helper to open the modal
-def show_details(row):
-    st.session_state.modal_row = row
-    st.session_state.show_entry_modal = True
-
-# example trigger (replace with your own logic)
-if st.button("🔍 Show Details"):
-    show_details({
-        "Point Name":     "Alpha",
-        "Counterparty":   "Foo Corp",
-        "Date":           "2025‑07‑15",
-        "Country":        "Hungary",
-        "Info":           "Some useful info…",
-        "Capacity Value": 123,
-        "Capacity Unit":  "MW",
-        "Volume Value":   456,
-        "Volume Unit":    "MWh",
-        "Name":           "Source X"
-    })
-
 # the modal
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state.modal_row
@@ -214,7 +193,7 @@ if st.session_state.get("show_entry_modal", False):
       }}
       .modal-content {{
         position: fixed;
-        top: 50%; left: 50%;
+        top: 10%; left: 50%;
         transform: translate(-50%, -50%);
         background: #fff;
         padding: 2rem;
