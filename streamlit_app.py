@@ -149,6 +149,18 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
             with st.chat_message("info"):
                 st.markdown(generate_summary_row(row))
 
+ with st.expander("Selected Entry Details", expanded=True):
+            st.markdown(f"**Counterparty**: {row_to_delete['Counterparty']}")
+            st.markdown(f"**Point Name**: {row_to_delete['Point Name']}")
+            st.markdown(f"**Date**: {row_to_delete['Date']}")
+            st.markdown(f"**Point Type**: {row_to_delete['Point Type']}")
+            st.markdown(f"**Country**: {row_to_delete['Country']}")
+            st.markdown(f"**Info**: {row_to_delete['Info']}")
+            st.markdown(f"**Capacity**: {row_to_delete.get('Capacity Value', '')} {row_to_delete.get('Capacity Unit', '')}")
+            st.markdown(f"**Volume**: {row_to_delete.get('Volume Value', '')} {row_to_delete.get('Volume Unit', '')}")
+            st.markdown(f"**Tags**: {row_to_delete['Tags']}")
+
+
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
