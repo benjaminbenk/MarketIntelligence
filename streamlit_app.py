@@ -230,8 +230,8 @@ if st.session_state.get("show_entry_modal", False):
       <p><strong>Volume:</strong> {row.get('Volume Value','N/A')} {row.get('Volume Unit','')}</p>
       <p><strong>Source:</strong> {row.get('Name','N/A')}</p>
       <!-- real link that reloads with close_modal=1 -->
-      <a href="{close_href}" class="modal-close">
-        ⬅️ Back to Summary
+      <a href="{close_href}" class="modal-close" target="_top">
+          ⬅️ Back to Summary
       </a>
     </div>
     """
