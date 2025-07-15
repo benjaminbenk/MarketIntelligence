@@ -184,6 +184,19 @@ if st.session_state.get("show_details", False) and "selected_entry" in st.sessio
         st.markdown(f"**Tags**: {row['Tags']}")
         st.markdown(f"**Source**: {row['Name']}")
 
+st.markdown("---")
+if st.button("⬅️ Vissza az összes bejegyzéshez"):
+    st.markdown("""
+        <script>
+            const summary = document.getElementById("summary_anchor");
+            if (summary) {
+                summary.scrollIntoView({ behavior: "smooth" });
+            }
+        </script>
+    """, unsafe_allow_html=True)
+
+st.markdown("<div id='summary_anchor'></div>", unsafe_allow_html=True)
+
 with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
     if filtered_df.empty:
         st.info("No entries found for this selection.")
