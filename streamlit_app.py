@@ -194,7 +194,7 @@ if st.session_state.get("show_entry_modal", False):
       .modal-content {{
         position: fixed;
         top: 10%; left: 50%;
-        transform: translate(-50%, -50%);
+        transform: translateX(-50%);
         background: #fff;
         padding: 2rem;
         border-radius: 8px;
