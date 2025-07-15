@@ -158,6 +158,7 @@ action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 if action_mode == "Add New":
     st.subheader("Add New Entry")
 
+    name = st.text_input("Name (who did the change)")
     counterparty = st.text_input("Counterparty")
     point_type = st.selectbox("Network Point Type", POINT_TYPES, key="point_type")
 
@@ -233,7 +234,6 @@ if action_mode == "Add New":
             st.caption(f"Suggestions for '{tag}': {', '.join(close_matches)}")
     all_selected_tags = selected_tags + typed_tags
     tags_value = ", ".join(sorted(set(all_selected_tags)))
-    name = st.text_input("Name (who did the change)")
 
 # --- Automatic summary generation function ---
 def generate_summary(info, point_name, counterparty, date):
@@ -263,6 +263,101 @@ if st.button("Save Entry"):
         save_data(df)
         st.success("Information saved to Google Sheet!")
         st.rerun()
+
+elif action_mode == "Edit Existing":
+    st.subheader("Edit Existing Entry")
+
+    if df.empty:
+        st.warning("No data available to edit.")
+    else:
+        # Step 1: Select entry
+        unique_keys = df.apply(lambda row: f"{row['Counterparty']} | {row['Point Name']} | {row['Date']}", axis=1)
+        selected_key = st.selectbox("Select Entry to Edit", unique_keys)
+
+        # Find matching row
+        selected_index = unique_keys[unique_keys == selected_key].index[0]
+        row_to_edit = df.loc[selected_index]
+
+        # Step 2: Editable fields (pre-populated)
+        new_info = st.text_area("Info", value=row_to_edit["Info"])
+        new_country = st.selectbox("Country", COUNTRIES_LIST, index=COUNTRIES_LIST.index(row_to_edit["Country"]))
+        new_point_type = st.selectbox("Network Point Type", POINT_TYPES, index=POINT_TYPES.index(row_to_edit["Point Type"]))
+
+        # Point Name (conditional logic based on Point Type)
+        if new_point_type == "Crossborder Point":
+            new_point_name = st.text_input("Crossborder Point Name", value=row_to_edit["Point Name"])
+        elif new_point_type == "Virtual Point":
+            selected_vp = st.selectbox("Select Virtual Point", VIRTUAL_POINTS + ["Other..."], index=VIRTUAL_POINTS.index(row_to_edit["Point Name"]) if row_to_edit["Point Name"] in VIRTUAL_POINTS else len(VIRTUAL_POINTS))
+            new_point_name = st.text_input("Enter new Virtual Point") if selected_vp == "Other..." else selected_vp
+        elif new_point_type == "Storage":
+            selected_sp = st.selectbox("Select Storage Point", STORAGE_POINTS + ["Other..."], index=STORAGE_POINTS.index(row_to_edit["Point Name"]) if row_to_edit["Point Name"] in STORAGE_POINTS else len(STORAGE_POINTS))
+            new_point_name = st.text_input("Enter new Storage Point") if selected_sp == "Other..." else selected_sp
+        else:
+            new_point_name = "Entire Country"
+
+        new_date = st.text_input("Date", value=row_to_edit["Date"])
+        new_counterparty = st.text_input("Counterparty", value=row_to_edit["Counterparty"])
+
+        existing_tag_list = [t.strip() for t in row_to_edit["Tags"].split(",")] if row_to_edit["Tags"] else []
+        selected_tags = st.multiselect("Select existing tags", options=all_tags, default=existing_tag_list)
+        custom_tag_input = st.text_input("Add custom tags (comma separated)")
+        custom_tags = [t.strip() for t in custom_tag_input.split(",") if t.strip()]
+        tags_value = ", ".join(sorted(set(selected_tags + custom_tags)))
+
+        name = st.text_input("Name (who did the change)", value=row_to_edit["Name"])
+
+        if st.button("Save Changes"):
+            old_row = row_to_edit.to_dict()
+            df.at[selected_index, "Info"] = new_info
+            df.at[selected_index, "Country"] = new_country
+            df.at[selected_index, "Point Type"] = new_point_type
+            df.at[selected_index, "Point Name"] = new_point_name
+            df.at[selected_index, "Date"] = new_date
+            df.at[selected_index, "Counterparty"] = new_counterparty
+            df.at[selected_index, "Tags"] = tags_value
+            df.at[selected_index, "Name"] = name
+
+            append_history("edit", df.loc[selected_index].to_dict(), old_data=old_row, name=name)
+            save_data(df)
+            st.success("Entry updated successfully.")
+            st.rerun()
+
+elif action_mode == "Delete":
+    st.subheader("Delete Existing Entry")
+
+    if df.empty:
+        st.warning("No data available to delete.")
+    else:
+        # Step 1: Select entry
+        unique_keys = df.apply(lambda row: f"{row['Counterparty']} | {row['Point Name']} | {row['Date']}", axis=1)
+        selected_key = st.selectbox("Select Entry to Delete", unique_keys)
+
+        # Find the row index to delete
+        selected_index = unique_keys[unique_keys == selected_key].index[0]
+        row_to_delete = df.loc[selected_index]
+
+        # Step 2: Show confirmation and delete
+        with st.expander("Selected Entry Details", expanded=True):
+            st.markdown(f"**Counterparty**: {row_to_delete['Counterparty']}")
+            st.markdown(f"**Point Name**: {row_to_delete['Point Name']}")
+            st.markdown(f"**Date**: {row_to_delete['Date']}")
+            st.markdown(f"**Point Type**: {row_to_delete['Point Type']}")
+            st.markdown(f"**Country**: {row_to_delete['Country']}")
+            st.markdown(f"**Info**: {row_to_delete['Info']}")
+            st.markdown(f"**Tags**: {row_to_delete['Tags']}")
+
+        confirm = st.checkbox("Yes, I want to delete this entry.")
+        name = st.text_input("Name (who is deleting the entry)")
+
+        if confirm and st.button("Delete Entry"):
+            deleted_data = row_to_delete.to_dict()
+            df.drop(index=selected_index, inplace=True)
+            df.reset_index(drop=True, inplace=True)
+
+            append_history("delete", deleted_data, name=name)
+            save_data(df)
+            st.success("Entry deleted successfully.")
+            st.rerun()
 
 
 # --- Data Download (Backup) ---
