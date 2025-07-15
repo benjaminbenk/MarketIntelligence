@@ -166,6 +166,59 @@ if st.sidebar.button("Clear Selection"):
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 
+# ─── 1) Modal injection at top-of-page: ────────────────────────────────────────
+if st.session_state.get("show_entry_modal", False):
+    row = st.session_state.modal_row
+    st.markdown(f"""
+    <style>
+      .modal-overlay {{
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(0,0,0,0.6);
+        z-index: 9998;
+      }}
+      .modal-content {{
+        position: fixed;
+        top: 10%;               /* 10% down from top */
+        left: 50%;              /* center horizontally */
+        transform: translateX(-50%);
+        background: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        max-width: 500px; width: 90%;
+        z-index: 9999;
+      }}
+      .modal-content h3 {{ margin-top: 0; }}
+      .modal-content p {{ margin: 0.5rem 0; }}
+      .modal-close {{
+        display: inline-block;
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: #eee;
+        border-radius: 4px;
+        text-decoration: none;
+        color: #333;
+        font-weight: bold;
+      }}
+    </style>
+
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <h3>🔎 Information Details – {row.get('Point Name','N/A')}</h3>
+      <p><strong>Counterparty:</strong> {row.get('Counterparty','N/A')}</p>
+      <p><strong>Time Horizon:</strong> {row.get('Date','N/A')}</p>
+      <p><strong>Country:</strong> {row.get('Country','N/A')}</p>
+      <p><strong>Info:</strong> {row.get('Info','N/A')}</p>
+      <p><strong>Capacity:</strong> {row.get('Capacity Value','N/A')} {row.get('Capacity Unit','')}</p>
+      <p><strong>Volume:</strong> {row.get('Volume Value','N/A')} {row.get('Volume Unit','')}</p>
+      <p><strong>Source:</strong> {row.get('Name','N/A')}</p>
+      <a href="#" class="modal-close" onclick="window.parent.location.reload();">
+        ⬅️ Back to Summary
+      </a>
+    </div>
+    """, unsafe_allow_html=True)
+
 with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expanded=True):
     if filtered_df.empty:
         st.info("No entries found for this selection.")
@@ -179,72 +232,7 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
                     st.session_state["show_entry_modal"] = True
                     st.session_state["modal_row"] = {k.strip(): v for k, v in row.to_dict().items()}
                     st.rerun()
-# the modal
-if st.session_state.get("show_entry_modal", False):
-    row = st.session_state.modal_row
-
-    html = f"""
-    <style>
-      .modal-overlay {{
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(0,0,0,0.5);
-        z-index: 9998;
-      }}
-      .modal-content {{
-        position: fixed;
-        top: 10%; left: 50%;
-        transform: translateX(-50%);
-        background: #fff;
-        padding: 2rem;
-        border-radius: 8px;
-        z-index: 9999;
-        max-width: 500px;
-        width: 90%;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      }}
-      .modal-content h3 {{ margin-top: 0; }}
-      .modal-content p {{ margin: 0.5rem 0; }}
-      #closeBtn {{
-        margin-top: 1.5rem;
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 4px;
-        background: #eee;
-        cursor: pointer;
-        font-size: 0.9rem;
-      }}
-    </style>
-
-    <div class="modal-overlay"></div>
-    <div class="modal-content">
-      <h3>🔎 Information Details – {row.get('Point Name','N/A')}</h3>
-      <p><strong>Counterparty:</strong> {row.get('Counterparty','N/A')}</p>
-      <p><strong>Point Name:</strong> {row.get('Point Name','N/A')}</p>
-      <p><strong>Time Horizon:</strong> {row.get('Date','N/A')}</p>
-      <p><strong>Country:</strong> {row.get('Country','N/A')}</p>
-      <p><strong>Info:</strong> {row.get('Info','N/A')}</p>
-      <p><strong>Capacity:</strong> {row.get('Capacity Value','N/A')} {row.get('Capacity Unit','')}</p>
-      <p><strong>Volume:</strong> {row.get('Volume Value','N/A')} {row.get('Volume Unit','')}</p>
-      <p><strong>Source:</strong> {row.get('Name','N/A')}</p>
-      <button id="closeBtn">⬅️ Back to Summary</button>
-    </div>
-
-    <script>
-      document.getElementById('closeBtn').onclick = () => {{
-        // remove *this* iframe from the parent DOM
-        window.frameElement.remove();
-      }};
-    </script>
-    """
-
-    # render as an isolated iframe-like component
-    components.html(html, height=600, scrolling=False)
-
-    # immediately clear the flag so it won't reappear on any future rerun
-    st.session_state.show_entry_modal = False
-
-
+                    
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 
