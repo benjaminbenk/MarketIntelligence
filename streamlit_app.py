@@ -164,6 +164,34 @@ if st.sidebar.button("Clear Selection"):
 
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
+
+st.markdown("<div id='summary_anchor'></div>", unsafe_allow_html=True)
+
+with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
+    if filtered_df.empty:
+        st.info("No entries found for this selection.")
+    else:
+        for idx, row in filtered_df.iterrows():
+            col1, col2 = st.columns([0.95, 0.05])
+            with col1:
+                st.markdown(generate_summary_row(row))
+            with col2:
+                if st.button("i", key=f"view_{idx}"):
+                    st.session_state["selected_entry"] = row.to_dict()
+                    st.session_state["show_details"] = True
+                
+                    # ⬇ Inject JS to scroll to anchor
+                    st.markdown("""
+                        <script>
+                            const details = document.getElementById("details_anchor");
+                            if (details) {
+                                setTimeout(() => {
+                                    details.scrollIntoView({ behavior: "smooth" });
+                                }, 200);
+                            }
+                        </script>
+                    """, unsafe_allow_html=True)
+
                  
 # --- Single Entry Detail Viewer ---
 st.subheader("🔎 View Full Details of a Selected Entry")
@@ -194,34 +222,6 @@ if st.button("⬅️ Vissza az összes bejegyzéshez"):
             }
         </script>
     """, unsafe_allow_html=True)
-
-st.markdown("<div id='summary_anchor'></div>", unsafe_allow_html=True)
-
-with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
-    if filtered_df.empty:
-        st.info("No entries found for this selection.")
-    else:
-        for idx, row in filtered_df.iterrows():
-            col1, col2 = st.columns([0.95, 0.05])
-            with col1:
-                st.markdown(generate_summary_row(row))
-            with col2:
-                if st.button("i", key=f"view_{idx}"):
-                    st.session_state["selected_entry"] = row.to_dict()
-                    st.session_state["show_details"] = True
-                
-                    # ⬇ Inject JS to scroll to anchor
-                    st.markdown("""
-                        <script>
-                            const details = document.getElementById("details_anchor");
-                            if (details) {
-                                setTimeout(() => {
-                                    details.scrollIntoView({ behavior: "smooth" });
-                                }, 200);
-                            }
-                        </script>
-                    """, unsafe_allow_html=True)
-
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
