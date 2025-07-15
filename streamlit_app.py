@@ -174,17 +174,26 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
             with col1:
                 st.markdown(generate_summary_row(row))
             with col2:
-                if st.button("i", key=f"modal_button_{idx}"):
-                    with st.modal(f"🔎 Entry Details – {row['Point Name']}", key=f"modal_view_{idx}"):
-                        st.markdown(f"**Counterparty**: {row['Counterparty']}")
-                        st.markdown(f"**Point Name**: {row['Point Name']}")
-                        st.markdown(f"**Time horizon**: {row['Date']}")
-                        st.markdown(f"**Country**: {row['Country']}")
-                        st.markdown(f"**Info**: {row['Info']}")
-                        st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
-                        st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-                        st.markdown(f"**Tags**: {row['Tags']}")
-                        st.markdown(f"**Source**: {row['Name']}")
+                # gomb a modal megnyitásához
+                if st.button("ℹ️", key=f"modal_button_{idx}"):
+                    # fontos: modal csak az esemény bekövetkezése után jelenhet meg
+                    st.session_state[f"show_modal_{idx}"] = True
+
+            # külön blokkban figyeljük, hogy meg kell-e jeleníteni a modal-t
+            if st.session_state.get(f"show_modal_{idx}", False):
+                with st.modal(f"🔎 Entry Details – {row['Point Name']}"):
+                    st.markdown(f"**Counterparty**: {row['Counterparty']}")
+                    st.markdown(f"**Point Name**: {row['Point Name']}")
+                    st.markdown(f"**Time horizon**: {row['Date']}")
+                    st.markdown(f"**Country**: {row['Country']}")
+                    st.markdown(f"**Info**: {row['Info']}")
+                    st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
+                    st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
+                    st.markdown(f"**Tags**: {row['Tags']}")
+                    st.markdown(f"**Source**: {row['Name']}")
+                    
+                    if st.button("Close"):
+                        st.session_state[f"show_modal_{idx}"] = False
 
 
 st.markdown("---")
