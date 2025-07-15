@@ -165,7 +165,7 @@ st.subheader(f"Filtered Results for: {selected_counterparty}")
 # --- Single Entry Detail Viewer ---
 st.subheader("🔎 View Full Details of a Selected Entry")
 
-if "selected_entry" in st.session_state:
+f st.session_state.get("show_details", False) and "selected_entry" in st.session_state:
     row = st.session_state["selected_entry"]
     with st.expander("🔎 View Full Details of Selected Entry", expanded=True):
         st.markdown(f"**Counterparty**: {row['Counterparty']}")
@@ -186,8 +186,11 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
             with col1:
                 st.markdown(generate_summary_row(row))
             with col2:
+                # -- Gomb az összefoglalónál
                 if st.button("i", key=f"view_{idx}"):
                     st.session_state["selected_entry"] = row.to_dict()
+                    st.session_state["show_details"] = True
+
 
 
 st.header("Add, Edit, Delete Info")
