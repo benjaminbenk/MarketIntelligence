@@ -101,21 +101,28 @@ all_tags = sorted(set(PREDEFINED_TAGS + list(existing_tags)))
 
 # --- Hierarchical Filter Panel ---
 st.sidebar.header("🔍 Filter Data")
-counterparty_list = sorted(df["Counterparty"].dropna().unique())
-selected_counterparty = st.sidebar.selectbox("Select Counterparty", counterparty_list)
 
-filtered_df = df[df["Counterparty"] == selected_counterparty]
+# --- Counterparty Filter with "All" ---
+counterparty_list = sorted(df["Counterparty"].dropna().unique().tolist())
+selected_counterparty = st.sidebar.selectbox("Select Counterparty", ["All"] + counterparty_list)
 
+filtered_df = df.copy()
+if selected_counterparty != "All":
+    filtered_df = filtered_df[filtered_df["Counterparty"] == selected_counterparty]
+
+# --- Point Type Filter with "All" ---
 point_types = filtered_df["Point Type"].dropna().unique().tolist()
 selected_point_type = st.sidebar.selectbox("Select Point Type", ["All"] + point_types)
 if selected_point_type != "All":
     filtered_df = filtered_df[filtered_df["Point Type"] == selected_point_type]
 
+# --- Point Name Filter with "All" ---
 point_names = filtered_df["Point Name"].dropna().unique().tolist()
 selected_point_name = st.sidebar.selectbox("Select Point Name", ["All"] + point_names)
 if selected_point_name != "All":
     filtered_df = filtered_df[filtered_df["Point Name"] == selected_point_name]
 
+# --- Tags Filter ---
 tags_available = sorted(set(tag.strip() for tags in filtered_df["Tags"].dropna() for tag in tags.split(",")))
 selected_tags = st.sidebar.multiselect("Filter by Tag", options=tags_available)
 if selected_tags:
