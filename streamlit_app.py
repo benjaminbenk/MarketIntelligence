@@ -170,13 +170,11 @@ if "selected_entry" in st.session_state:
     with st.expander("🔎 View Full Details of Selected Entry", expanded=True):
         st.markdown(f"**Counterparty**: {row['Counterparty']}")
         st.markdown(f"**Point Name**: {row['Point Name']}")
-        st.markdown(f"**Date**: {row['Date']}")
-        st.markdown(f"**Point Type**: {row['Point Type']}")
+        st.markdown(f"**Time horizon**: {row['Date']}")
         st.markdown(f"**Country**: {row['Country']}")
         st.markdown(f"**Info**: {row['Info']}")
         st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
         st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-        st.markdown(f"**Tags**: {row['Tags']}")
         st.markdown(f"**Source**: {row['Name']}")
 
 with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
