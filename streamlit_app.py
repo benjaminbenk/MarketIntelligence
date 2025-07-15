@@ -187,52 +187,55 @@ st.markdown("<div id='details_anchor'></div>", unsafe_allow_html=True)
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state["modal_row"]
 
+    # CSS for overlay + modal
     st.markdown("""
-    <style>
-    .overlay {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: rgba(0, 0, 0, 0.7);
-        z-index: 1000;
-    }
-    .modal-box {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: #fff;
-        color: #000;
-        padding: 2rem;
-        border-radius: 10px;
-        width: 90%;
-        max-width: 600px;
-        z-index: 1001;
-        box-shadow: 0px 0px 30px rgba(0,0,0,0.5);
-    }
-    .close-button {
-        position: absolute;
-        top: 10px;
-        right: 16px;
-        font-size: 22px;
-        font-weight: bold;
-        color: #555;
-        background: none;
-        border: none;
-        cursor: pointer;
-    }
-    </style>
+        <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 9998;
+        }
+        .modal-content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: black;
+            padding: 2rem;
+            border-radius: 12px;
+            z-index: 9999;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+        }
+        .modal-close {
+            position: absolute;
+            top: 10px;
+            right: 14px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #666;
+            background: none;
+            border: none;
+            cursor: pointer;
+            z-index: 10000;
+        }
+        </style>
 
-    <div class="overlay"></div>
-    <div class="modal-box">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
     """, unsafe_allow_html=True)
 
-    # X button – Streamlit native
+    # ❌ Close button with native Streamlit button
     close_col1, close_col2 = st.columns([0.9, 0.1])
     with close_col2:
-        if st.button("✖", key="close_modal_button"):
+        if st.button("✖", key="close_modal_btn"):
             st.session_state["show_entry_modal"] = False
             st.rerun()
 
+    # ✅ Entry Details
     st.markdown(f"### 🔎 Entry Details – {row['Point Name']}")
     st.markdown(f"**Counterparty**: {row['Counterparty']}")
     st.markdown(f"**Point Name**: {row['Point Name']}")
@@ -244,6 +247,7 @@ if st.session_state.get("show_entry_modal", False):
     st.markdown(f"**Tags**: {row['Tags']}")
     st.markdown(f"**Source**: {row['Name']}")
 
+    # Closing the modal container
     st.markdown("</div>", unsafe_allow_html=True)
 
     if st.session_state.get("close_modal"):
