@@ -18,7 +18,7 @@ SCOPES = [
 ]
 
 REQUIRED_COLUMNS = [
-    "Name", "Counterparty", "Country", "Point Type", "Point Name", "Date", "Info", "Tags"
+    "Name", "Counterparty", "Country", "Point Type", "Point Name", "Date", "Info", "Capacity Value", "Capacity Unit", "Volume Value", "Volume Unit","Tags"
 ]
 
 COUNTRIES_LIST = [
@@ -232,6 +232,21 @@ if action_mode == "Add New":
         close_matches = [m[0] for m in matches if m[1] > 70]
         if close_matches:
             st.caption(f"Suggestions for '{tag}': {', '.join(close_matches)}")
+
+    # --- Capacity ---
+col1, col2 = st.columns([2, 1])
+with col1:
+    capacity_value = st.number_input("Capacity", min_value=0.0, step=0.1)
+with col2:
+    capacity_unit = st.selectbox("Unit", ["kWh/h", "MWh/h", "GWh/h", "m³/h"])
+
+# --- Volume ---
+col3, col4 = st.columns([2, 1])
+with col3:
+    volume_value = st.number_input("Volume", min_value=0.0, step=0.1)
+with col4:
+    volume_unit = st.selectbox("Unit", ["MW", "MWh", "GW", "GWh"])
+
     all_selected_tags = selected_tags + typed_tags
     tags_value = ", ".join(sorted(set(all_selected_tags)))
 
@@ -255,6 +270,10 @@ if st.button("Save Entry"):
             "Point Name": point_name,
             "Date": date_repr,
             "Info": info,
+            "Capacity Value": capacity_value,
+            "Capacity Unit": capacity_unit,
+            "Volume Value": volume_value,
+            "Volume Unit": volume_unit,
             "Tags": tags_value
         }
 
@@ -298,6 +317,21 @@ elif action_mode == "Edit Existing":
         new_date = st.text_input("Date", value=row_to_edit["Date"])
         new_counterparty = st.text_input("Counterparty", value=row_to_edit["Counterparty"])
 
+        # --- Capacity ---
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            new_capacity_value = st.number_input("Capacity", value=float(row_to_edit.get("Capacity Value", 0)), min_value=0.0, step=0.1)
+        with col2:
+            new_capacity_unit = st.selectbox("Unit", ["kWh/h", "MWh/h", "GWh/h", "m³/h"], index=0 if row_to_edit.get("Capacity Unit", "") not in ["kWh/h", "MWh/h", "GWh/h", "m³/h"] else ["kWh/h", "MWh/h", "GWh/h", "m³/h"].index(row_to_edit.get("Capacity Unit", "")))
+    
+        # --- Volume ---
+        col3, col4 = st.columns([2, 1])
+        with col3:
+            new_volume_value = st.number_input("Volume", value=float(row_to_edit.get("Volume Value", 0)), min_value=0.0, step=0.1)
+        with col4:
+            new_volume_unit = st.selectbox("Unit", ["MW", "MWh", "GW", "GWh"], index=0 if row_to_edit.get("Volume Unit", "") not in ["MW", "MWh", "GW", "GWh"] else ["MW", "MWh", "GW", "GWh"].index(row_to_edit.get("Volume Unit", "")))
+
+
         existing_tag_list = [t.strip() for t in row_to_edit["Tags"].split(",")] if row_to_edit["Tags"] else []
         selected_tags = st.multiselect("Select existing tags", options=all_tags, default=existing_tag_list)
         custom_tag_input = st.text_input("Add custom tags (comma separated)")
@@ -314,6 +348,10 @@ elif action_mode == "Edit Existing":
             df.at[selected_index, "Point Name"] = new_point_name
             df.at[selected_index, "Date"] = new_date
             df.at[selected_index, "Counterparty"] = new_counterparty
+            df.at[selected_index, "Capacity Value"] = new_capacity_value
+            df.at[selected_index, "Capacity Unit"] = new_capacity_unit
+            df.at[selected_index, "Volume Value"] = new_volume_value
+            df.at[selected_index, "Volume Unit"] = new_volume_unit
             df.at[selected_index, "Tags"] = tags_value
             df.at[selected_index, "Name"] = name
 
@@ -344,6 +382,8 @@ elif action_mode == "Delete":
             st.markdown(f"**Point Type**: {row_to_delete['Point Type']}")
             st.markdown(f"**Country**: {row_to_delete['Country']}")
             st.markdown(f"**Info**: {row_to_delete['Info']}")
+            st.markdown(f"**Capacity**: {row_to_delete.get('Capacity Value', '')} {row_to_delete.get('Capacity Unit', '')}")
+            st.markdown(f"**Volume**: {row_to_delete.get('Volume Value', '')} {row_to_delete.get('Volume Unit', '')}")
             st.markdown(f"**Tags**: {row_to_delete['Tags']}")
 
         confirm = st.checkbox("Yes, I want to delete this entry.")
