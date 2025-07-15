@@ -180,17 +180,14 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
                     st.session_state["selected_entry"] = row.to_dict()
                     st.session_state["show_details"] = True
                 
-                    # ⬇ Inject JS to scroll to anchor
+                    # Scroll JS – delayed rerun for smoother experience
                     st.markdown("""
                         <script>
-                            const details = document.getElementById("details_anchor");
-                            if (details) {
-                                setTimeout(() => {
-                                    details.scrollIntoView({ behavior: "smooth" });
-                                }, 200);
-                            }
+                            window.location.hash = "details_anchor";
                         </script>
                     """, unsafe_allow_html=True)
+                
+                    st.rerun()  # biztosítja, hogy az expander renderelődjön, és scroll működjön
 
                  
 # --- Single Entry Detail Viewer ---
@@ -199,9 +196,8 @@ st.subheader("🔎 View Full Details of a Selected Entry")
 # 👇 HTML anchor
 st.markdown("<div id='details_anchor'></div>", unsafe_allow_html=True)
 
-if st.session_state.get("show_details", False) and "selected_entry" in st.session_state:
-    row = st.session_state["selected_entry"]
-    with st.expander("🔎 View Full Details of Selected Entry", expanded=True):
+if st.button("i", key=f"modal_{idx}"):
+    with st.modal("Entry Details", key=f"modal_view_{idx}"):
         st.markdown(f"**Counterparty**: {row['Counterparty']}")
         st.markdown(f"**Point Name**: {row['Point Name']}")
         st.markdown(f"**Time horizon**: {row['Date']}")
