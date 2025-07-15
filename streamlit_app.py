@@ -165,8 +165,6 @@ if st.sidebar.button("Clear Selection"):
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 
-st.markdown("<div id='summary_anchor'></div>", unsafe_allow_html=True)
-
 with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
     if filtered_df.empty:
         st.info("No entries found for this selection.")
@@ -176,37 +174,18 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
             with col1:
                 st.markdown(generate_summary_row(row))
             with col2:
-                if st.button("i", key=f"view_{idx}"):
-                    st.session_state["selected_entry"] = row.to_dict()
-                    st.session_state["show_details"] = True
-                
-                    # Scroll JS – delayed rerun for smoother experience
-                    st.markdown("""
-                        <script>
-                            window.location.hash = "details_anchor";
-                        </script>
-                    """, unsafe_allow_html=True)
-                
-                    st.rerun()  # biztosítja, hogy az expander renderelődjön, és scroll működjön
+                if st.button("i", key=f"modal_button_{idx}"):
+                    with st.modal(f"🔎 Entry Details – {row['Point Name']}", key=f"modal_view_{idx}"):
+                        st.markdown(f"**Counterparty**: {row['Counterparty']}")
+                        st.markdown(f"**Point Name**: {row['Point Name']}")
+                        st.markdown(f"**Time horizon**: {row['Date']}")
+                        st.markdown(f"**Country**: {row['Country']}")
+                        st.markdown(f"**Info**: {row['Info']}")
+                        st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
+                        st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
+                        st.markdown(f"**Tags**: {row['Tags']}")
+                        st.markdown(f"**Source**: {row['Name']}")
 
-                 
-# --- Single Entry Detail Viewer ---
-st.subheader("🔎 View Full Details of a Selected Entry")
-
-# 👇 HTML anchor
-st.markdown("<div id='details_anchor'></div>", unsafe_allow_html=True)
-
-if st.button("i", key=f"modal_{idx}"):
-    with st.modal("Entry Details", key=f"modal_view_{idx}"):
-        st.markdown(f"**Counterparty**: {row['Counterparty']}")
-        st.markdown(f"**Point Name**: {row['Point Name']}")
-        st.markdown(f"**Time horizon**: {row['Date']}")
-        st.markdown(f"**Country**: {row['Country']}")
-        st.markdown(f"**Info**: {row['Info']}")
-        st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
-        st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-        st.markdown(f"**Tags**: {row['Tags']}")
-        st.markdown(f"**Source**: {row['Name']}")
 
 st.markdown("---")
 if st.button("⬅️ Vissza az összes bejegyzéshez"):
