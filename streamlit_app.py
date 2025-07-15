@@ -179,7 +179,7 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
                     st.rerun()
 
 if st.session_state.get("show_entry_modal", False):
-    row = st.session_state["modal_row"]
+    row = st.session_state.get("modal_row", {})
 
     st.markdown("""
         <style>
@@ -206,24 +206,21 @@ if st.session_state.get("show_entry_modal", False):
         <div class="modal-content" id="modalContent">
     """, unsafe_allow_html=True)
 
-    st.markdown(f"### 🔎 Information Details – {row['Point Name']}")
-    st.markdown(f"**Counterparty**: {row['Counterparty']}")
-    st.markdown(f"**Point Name**: {row['Point Name']}")
-    st.markdown(f"**Time Horizon**: {row['Date']}")
-    st.markdown(f"**Country**: {row['Country']}")
-    st.markdown(f"**Info**: {row['Info']}")
+    st.markdown(f"### 🔎 Information Details – {row.get('Point Name', 'N/A')}")
+    st.markdown(f"**Counterparty**: {row.get('Counterparty', 'N/A')}")
+    st.markdown(f"**Point Name**: {row.get('Point Name', 'N/A')}")
+    st.markdown(f"**Time Horizon**: {row.get('Date', 'N/A')}")
+    st.markdown(f"**Country**: {row.get('Country', 'N/A')}")
+    st.markdown(f"**Info**: {row.get('Info', 'N/A')}")
     st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
     st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-    st.markdown(f"**Source**: {row['Name']}")
+    st.markdown(f"**Source**: {row.get('Name', 'N/A')}")
 
     st.markdown("</div>", unsafe_allow_html=True)  # closes .modal-content
 
     if st.button("⬅️ Back to Summary", key="close_modal_btn"):
         st.session_state["show_entry_modal"] = False
         st.rerun()
-
-
-
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
