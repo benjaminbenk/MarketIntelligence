@@ -180,12 +180,12 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
                     st.session_state["modal_row"] = {k.strip(): v for k, v in row.to_dict().items()}
                     st.rerun()
 
-# Helper to open the “modal”
+# helper to open the modal
 def show_details(row):
     st.session_state.modal_row = row
     st.session_state.show_entry_modal = True
 
-# Your “summary” view; replace with your own table/button logic
+# example trigger (replace with your own logic)
 if st.button("🔍 Show Details"):
     show_details({
         "Point Name":     "Alpha",
@@ -200,7 +200,7 @@ if st.button("🔍 Show Details"):
         "Name":           "Source X"
     })
 
-# If the flag is set, render one big HTML blob as an iframe
+# the modal
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state.modal_row
 
@@ -226,15 +226,14 @@ if st.session_state.get("show_entry_modal", False):
       }}
       .modal-content h3 {{ margin-top: 0; }}
       .modal-content p {{ margin: 0.5rem 0; }}
-      .modal-close {{
-        margin-top: 1rem;
-        display: inline-block;
+      #closeBtn {{
+        margin-top: 1.5rem;
         padding: 0.5rem 1rem;
-        background: #eee;
+        border: none;
         border-radius: 4px;
+        background: #eee;
         cursor: pointer;
-        text-decoration: none;
-        color: #333;
+        font-size: 0.9rem;
       }}
     </style>
 
@@ -249,17 +248,21 @@ if st.session_state.get("show_entry_modal", False):
       <p><strong>Capacity:</strong> {row.get('Capacity Value','N/A')} {row.get('Capacity Unit','')}</p>
       <p><strong>Volume:</strong> {row.get('Volume Value','N/A')} {row.get('Volume Unit','')}</p>
       <p><strong>Source:</strong> {row.get('Name','N/A')}</p>
-      <a href="#" class="modal-close" onclick="
-         // hide the modal by unmounting the component
-         window.parent.location.reload();
-      ">⬅️ Back to Summary</a>
+      <button id="closeBtn">⬅️ Back to Summary</button>
     </div>
+
+    <script>
+      document.getElementById('closeBtn').onclick = () => {{
+        // remove *this* iframe from the parent DOM
+        window.frameElement.remove();
+      }};
+    </script>
     """
 
-    # Render your modal HTML inside an iframe‐like component
+    # render as an isolated iframe-like component
     components.html(html, height=600, scrolling=False)
 
-    # Clear the flag immediately so reload actually hides it
+    # immediately clear the flag so it won't reappear on any future rerun
     st.session_state.show_entry_modal = False
 
 
