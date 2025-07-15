@@ -45,6 +45,7 @@ def load_data():
     with st.spinner("Loading data from Google Sheets..."):
         sheet = get_gs_sheet()
         df = pd.DataFrame(sheet.get_all_records())
+        df.columns = df.columns.str.strip()  # ✅ Strip whitespace from column names
         for col in REQUIRED_COLUMNS:
             if col not in df.columns:
                 df[col] = ""
@@ -175,69 +176,51 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
             with col2:
                 if st.button("i", key=f"modal_button_{idx}"):
                     st.session_state["show_entry_modal"] = True
-                    st.session_state["modal_row"] = row.to_dict()
+                    st.session_state["modal_row"] = {k.strip(): v for k, v in row.to_dict().items()}
                     st.rerun()
-
-# Ellenőrizzük, hogy a modális ablakot meg kell-e jeleníteni
 if st.session_state.get("show_entry_modal", False):
-    # A megjelenítendő adatokat egyszer olvassuk ki
     row = st.session_state.get("modal_row", {})
 
-    # 1. LÉPÉS: A CSS és a modális ablak nyitó HTML-elemeinek létrehozása
     st.markdown("""
         <style>
-            /* ... (a CSS kód változatlan) ... */
-            .modal-overlay {
-                position: fixed;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background-color: rgba(0, 0, 0, 0.6);
-                z-index: 9998;
-            }
-            .modal-content {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: white;
-                color: black;
-                padding: 2rem;
-                border-radius: 12px;
-                z-index: 9999;
-                max-width: 600px;
-                width: 90%;
-            }
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 9998;
+        }
+        .modal-content {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: black;
+            padding: 2rem;
+            border-radius: 12px;
+            z-index: 9999;
+            max-width: 600px;
+            width: 90%;
+        }
         </style>
-        
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content" id="modalContent">
     """, unsafe_allow_html=True)
 
-    # --- HIBAKERESÉS ---
-    # Ez a sor kiírja a teljes 'row' szótárat, hogy lásd a pontos kulcsneveket.
-    # Ha minden működik, ezt a sort törölheted vagy kikommentelheted (#-vel).
-    st.write(row)
-    # --------------------
+    st.markdown(f"### 🔎 Information Details – {row.get('Point Name', 'N/A')}")
+    st.markdown(f"**Counterparty**: {row.get('Counterparty', 'N/A')}")
+    st.markdown(f"**Point Name**: {row.get('Point Name', 'N/A')}")
+    st.markdown(f"**Time Horizon**: {row.get('Date', 'N/A')}")
+    st.markdown(f"**Country**: {row.get('Country', 'N/A')}")
+    st.markdown(f"**Info**: {row.get('Info', 'N/A')}")
+    st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
+    st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
+    st.markdown(f"**Source**: {row.get('Name', 'N/A')}")
 
-    # 2. LÉPÉS: A tartalom kiíratása a HELYES (valószínűleg angol) kulcsokkal
-    st.markdown(f"""
-        <h3>🔎 Információk – {row.get('Point Name', 'N/A')}</h3>
-        <p><strong>Partner:</strong> {row.get('Counterparty', 'N/A')}</p>
-        <p><strong>Pont neve:</strong> {row.get('Point Name', 'N/A')}</p>
-        <p><strong>Időhorizont:</strong> {row.get('Date', 'N/A')}</p>
-        <p><strong>Ország:</strong> {row.get('Country', 'N/A')}</p>
-        <p><strong>Info:</strong> {row.get('Info', 'N/A')}</p>
-        <p><strong>Kapacitás:</strong> {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}</p>
-        <p><strong>Mennyiség:</strong> {row.get('Volume Value', '')} {row.get('Volume Unit', '')}</p>
-        <p><strong>Forrás:</strong> {row.get('Name', 'N/A')}</p>
-    """)
+    st.markdown("</div>", unsafe_allow_html=True)  # closes .modal-content
 
-    # 3. LÉPÉS: A gomb elhelyezése
-    if st.button("⬅️ Vissza az összefoglalóhoz", key="close_modal_btn"):
+    if st.button("⬅️ Back to Summary", key="close_modal_btn"):
         st.session_state["show_entry_modal"] = False
         st.rerun()
-
-    # 4. LÉPÉS: A 'modal-content' div bezárása
-    st.markdown("</div>", unsafe_allow_html=True)
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
