@@ -229,6 +229,17 @@ if st.session_state.get("show_entry_modal", False):
         </script>
     """, unsafe_allow_html=True)
 
+    <p style="text-align: right; margin-top: 2rem;">
+    <a href="?close_modal=1" style="
+        background-color: #444;
+        color: white;
+        padding: 8px 16px;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+    ">⬅️ Back to Summary</a>
+</p>
+
 
     # Modal content via Streamlit
     st.markdown(f"### 🔎 Information Details – {row['Point Name']}")
