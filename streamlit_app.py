@@ -198,7 +198,7 @@ if st.session_state.get("show_entry_modal", False):
         background: #eee;
         border-radius: 4px;
         text-decoration: none;
-        color: #333;
+        color: black;
         font-weight: bold;
       }}
     </style>
