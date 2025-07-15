@@ -179,9 +179,9 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
                     st.rerun()
 
 # --- Single Entry Detail Viewer ---
-st.subheader("🔎 View Full Details of a Selected Entry")
+st.subheader(" View Full Details of a Selected Entry")
 
-# 👇 HTML anchor
+#  HTML anchor
 st.markdown("<div id='details_anchor'></div>", unsafe_allow_html=True)
 
 if st.session_state.get("show_entry_modal", False):
