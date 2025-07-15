@@ -86,6 +86,18 @@ def generate_summary_row(row):
 
     return f"🔹 {info} at **{point_name}** ({point_type}) from **{counterparty}** on **{date}** — source: _{name}_"
 
+def clear_all_filters():
+    for key in [
+        "selected_counterparty",
+        "selected_point_type",
+        "selected_point_name",
+        "selected_tags",
+        "unified_search",
+        "show_entry_modal",
+        "modal_row"
+    ]:
+        st.session_state.pop(key, None)
+
 # --- UI ---
 st.set_page_config(page_title="Gas Market Intelligence", layout="wide")
 st.title("CEE Gas Market Intelligence")
@@ -193,19 +205,10 @@ if st.session_state.unified_search:
 
     filtered_df = filtered_df[filtered_df.apply(row_matches_any_field, axis=1)]
 
-if st.sidebar.button("Clear Selection"):
-    # Remove each filter/search key from session_state:
-    for key in [
-        "selected_counterparty",
-        "selected_point_type",
-        "selected_point_name",
-        "selected_tags",
-        "unified_search",
-        "show_entry_modal",
-        "modal_row"
-    ]:
-        st.session_state.pop(key, None)
-    st.experimental_rerun()
+st.sidebar.button(
+    "Clear Selection",
+    on_click=clear_all_filters
+)
     
 st.subheader(f"Filtered Results for: {selected_counterparty}")
     
