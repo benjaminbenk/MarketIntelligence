@@ -83,48 +83,6 @@ def generate_summary_row(row):
 
     return f"🔹 {info} at **{point_name}** ({point_type}) from **{counterparty}** on **{date}** — source: _{name}_"
 
-def summarize_filtered_entries(df):
-    if df.empty:
-        return "No data to summarize."
-
-    from collections import Counter
-
-    earliest_date = df["Date"].min()
-    latest_date = df["Date"].max()
-    top_tags = Counter([tag for tags in df["Tags"].dropna() for tag in tags.split(",")]).most_common(3)
-    common_tags = ", ".join([t[0] for t in top_tags]) if top_tags else "unspecified"
-
-    top_countries = df["Country"].value_counts().head(3).index.tolist()
-    top_point_type = df["Point Type"].value_counts().idxmax()
-    top_point_names = df["Point Name"].value_counts().head(3).index.tolist()
-
-    cap_vals = df["Capacity Value"].dropna()
-    cap_unit = df["Capacity Unit"].mode()[0] if not df["Capacity Unit"].dropna().empty else ""
-    min_cap = cap_vals.min() if not cap_vals.empty else "N/A"
-    max_cap = cap_vals.max() if not cap_vals.empty else "N/A"
-
-    vol_vals = df["Volume Value"].dropna()
-    vol_unit = df["Volume Unit"].mode()[0] if not df["Volume Unit"].dropna().empty else ""
-    min_vol = vol_vals.min() if not vol_vals.empty else "N/A"
-    max_vol = vol_vals.max() if not vol_vals.empty else "N/A"
-
-    return f"""
-**Summary of Filtered Gas Market Intelligence**
-
-Across **{len(df)} entries**, key developments were identified spanning the period from **{earliest_date}** to **{latest_date}**. Most entries involved **{common_tags}**, with a concentration on **{top_point_type}** network points such as **{", ".join(top_point_names)}**.
-
-- 📍 Most affected countries: {", ".join(top_countries)}
-- 🏷️ Common tags: {common_tags}
-- ⚡ Capacity: {min_cap}–{max_cap} {cap_unit}
-- 🔋 Volume: {min_vol}–{max_vol} {vol_unit}
-
-The data highlights increased activity at **{top_point_names[0]}**, suggesting potential changes in infrastructure, regulation, or demand.
-
-_Note: This summary was auto-generated based on filtered selections._
-"""
-
-
-
 # --- UI ---
 st.set_page_config(page_title="Gas Market Intelligence", layout="wide")
 st.title("CEE Gas Market Intelligence")
@@ -190,9 +148,7 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
         for _, row in filtered_df.iterrows():
             with st.chat_message("info"):
                 st.markdown(generate_summary_row(row))
-                
-with st.expander("🧠 AI Summary", expanded=True):
-    st.markdown(summarize_filtered_entries(filtered_df))
+
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
