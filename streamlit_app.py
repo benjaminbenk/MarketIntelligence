@@ -166,55 +166,59 @@ if st.sidebar.button("Clear Selection"):
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 
-# ─── 1) Modal injection at top-of-page: ────────────────────────────────────────
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state.modal_row
-    st.markdown(f"""
+
+    # Notice: everything from <style>...</style> and your divs is INSIDE the """..."""!
+    modal_html = f"""
     <style>
-      .modal-content {
+      .modal-overlay {{
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: rgba(0,0,0,0.6);
+        z-index: 9998;
+      }}
+      .modal-content {{
         position: fixed;
         top: 10%;
         left: 50%;
         transform: translateX(-50%);
         background: #fff;
-        /* add this */  
-        color: black;
+        color: black;              /* ensure text is black */
         padding: 2rem;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        max-width: 500px; width: 90%;
+        max-width: 500px;
+        width: 90%;
         z-index: 9999;
-      }
-      .modal-content h3 { margin-top: 0; }
-      .modal-content p { margin: 0.5rem 0; }
-      .modal-close {
+      }}
+      .modal-content h3 {{ margin-top: 0; }}
+      .modal-content p {{ margin: 0.5rem 0; }}
+      .modal-close {{
         display: inline-block;
         margin-top: 1rem;
         padding: 0.5rem 1rem;
         background: #eee;
         border-radius: 4px;
+        color: black;            /* link text black too */
         text-decoration: none;
-        /* also ensure the link text is black */
-        color: black;
         font-weight: bold;
-      }
+      }}
     </style>
 
     <div class="modal-overlay"></div>
     <div class="modal-content">
       <h3>🔎 Information Details – {row.get('Point Name','N/A')}</h3>
       <p><strong>Counterparty:</strong> {row.get('Counterparty','N/A')}</p>
-      <p><strong>Time Horizon:</strong> {row.get('Date','N/A')}</p>
-      <p><strong>Country:</strong> {row.get('Country','N/A')}</p>
-      <p><strong>Info:</strong> {row.get('Info','N/A')}</p>
-      <p><strong>Capacity:</strong> {row.get('Capacity Value','N/A')} {row.get('Capacity Unit','')}</p>
-      <p><strong>Volume:</strong> {row.get('Volume Value','N/A')} {row.get('Volume Unit','')}</p>
-      <p><strong>Source:</strong> {row.get('Name','N/A')}</p>
+      <!-- ... all your other fields ... -->
       <a href="#" class="modal-close" onclick="window.parent.location.reload();">
         ⬅️ Back to Summary
       </a>
     </div>
-    """, unsafe_allow_html=True)
+    """
+
+    # Now render it all at once
+    st.markdown(modal_html, unsafe_allow_html=True)
 
 with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expanded=True):
     if filtered_df.empty:
