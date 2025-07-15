@@ -166,12 +166,12 @@ if st.sidebar.button("Clear Selection"):
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 
-params = st.experimental_get_query_params()
+params = st.query_params
 if params.get("close_modal") == ["1"]:
     st.session_state.show_entry_modal = False
-    # remove the query param so it doesn’t keep firing
-    st.experimental_set_query_params()
-
+    # clear all query params
+    st.set_query_params()
+    
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state.modal_row
 
