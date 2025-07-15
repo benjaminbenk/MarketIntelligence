@@ -143,7 +143,7 @@ unified_search = st.sidebar.text_input("Search All Fields")
 
 if unified_search:
     search_lower = unified_search.lower()
-    
+
     def row_matches_any_field(row):
         fields_to_search = [
             str(row.get("Info", "")),
@@ -241,7 +241,9 @@ if st.session_state.get("show_entry_modal", False):
 # Check if query param signals modal close
 if st.query_params.get("close_modal") == "1":
     st.session_state["show_entry_modal"] = False
-    st.experimental_set_query_params()  # clear query
+    st.experimental_set_query_params()
+    st.rerun()
+
 
 
 st.header("Add, Edit, Delete Info")
