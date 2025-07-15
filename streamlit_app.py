@@ -192,10 +192,10 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
                 st.markdown(generate_summary_row(row))
             with col2:
                 if st.button("i", key=f"view_{idx}"):
-                    # Mentsd el a kiválasztott sort és állítsd be a flaget
                     st.session_state["selected_entry"] = row.to_dict()
                     st.session_state["show_details"] = True
-                    st.experimental_rerun()  # hogy azonnal frissüljön az állapot
+                    st.rerun()
+
 
 
 
