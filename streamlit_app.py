@@ -241,7 +241,7 @@ if st.session_state.get("show_entry_modal", False):
         <p style="text-align: right; margin-top: 2rem;">
             <a href="?close_modal=1" style="
                 background-color: #444;
-                color: white;
+                color: black;
                 padding: 8px 16px;
                 text-decoration: none;
                 border-radius: 5px;
@@ -250,8 +250,6 @@ if st.session_state.get("show_entry_modal", False):
         </p>
     </div>
     """, unsafe_allow_html=True)
-
-
 
 # Check if query param signals modal close
 if st.query_params.get("close_modal") == "1":
