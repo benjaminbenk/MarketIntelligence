@@ -250,13 +250,6 @@ if st.session_state.get("show_entry_modal", False):
     # Closing the modal container
     st.markdown("</div>", unsafe_allow_html=True)
 
-    if st.session_state.get("close_modal"):
-        st.session_state["show_entry_modal"] = False
-        st.session_state["close_modal"] = False
-        st.rerun()
-
-
-
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
 
