@@ -190,7 +190,9 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
         for _, row in filtered_df.iterrows():
             with st.chat_message("info"):
                 st.markdown(generate_summary_row(row))
-
+                
+with st.expander("🧠 AI Summary", expanded=True):
+    st.markdown(summarize_filtered_entries(filtered_df))
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
