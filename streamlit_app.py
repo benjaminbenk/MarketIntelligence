@@ -181,62 +181,56 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
 # --- Single Entry Detail Viewer ---
 st.subheader(" View Full Details of a Selected Entry")
 
-#  HTML anchor
-st.markdown("<div id='details_anchor'></div>", unsafe_allow_html=True)
-
-# At the end of your file, just before the modal HTML block, replace the modal section with this fixed one:
-
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state["modal_row"]
 
-    # CSS for overlay + modal
-    st.markdown("""
-        <style>
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 9998;
-        }
-        .modal-content {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            color: black;
-            padding: 2rem;
-            border-radius: 12px;
-            z-index: 9999;
-            width: 90%;
-            max-width: 600px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.4);
-        }
-        </style>
-        <div class="modal-overlay"></div>
-        <div class="modal-content">
-    """, unsafe_allow_html=True)
+    with st.container():
+        st.markdown("""
+            <style>
+            .modal-overlay {
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background-color: rgba(0, 0, 0, 0.7);
+                z-index: 9998;
+            }
+            .modal-content {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                color: black;
+                padding: 2rem;
+                border-radius: 12px;
+                z-index: 9999;
+                width: 90%;
+                max-width: 600px;
+                box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            }
+            </style>
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+        """, unsafe_allow_html=True)
 
-    # Close button using Streamlit native
-    close1, close2 = st.columns([0.9, 0.1])
-    with close2:
-        if st.button("\u2716 Close", key="close_modal_btn"):
-            st.session_state["show_entry_modal"] = False
-            st.rerun()
+        # Streamlit native close button inside modal
+        col1, col2 = st.columns([0.9, 0.1])
+        with col2:
+            if st.button("✖ Close", key="close_modal"):
+                st.session_state["show_entry_modal"] = False
+                st.rerun()
 
-    # Entry content
-    st.markdown(f"### \ud83d\udd0e Entry Details – {row['Point Name']}")
-    st.markdown(f"**Counterparty**: {row['Counterparty']}")
-    st.markdown(f"**Point Name**: {row['Point Name']}")
-    st.markdown(f"**Time Horizon**: {row['Date']}")
-    st.markdown(f"**Country**: {row['Country']}")
-    st.markdown(f"**Info**: {row['Info']}")
-    st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
-    st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-    st.markdown(f"**Tags**: {row['Tags']}")
-    st.markdown(f"**Source**: {row['Name']}")
+        st.markdown(f"### 🔎 Entry Details – {row['Point Name']}")
+        st.markdown(f"**Counterparty**: {row['Counterparty']}")
+        st.markdown(f"**Point Name**: {row['Point Name']}")
+        st.markdown(f"**Time Horizon**: {row['Date']}")
+        st.markdown(f"**Country**: {row['Country']}")
+        st.markdown(f"**Info**: {row['Info']}")
+        st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
+        st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
+        st.markdown(f"**Tags**: {row['Tags']}")
+        st.markdown(f"**Source**: {row['Name']}")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 st.header("Add, Edit, Delete Info")
