@@ -146,7 +146,16 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}"):
     if filtered_df.empty:
         st.info("No entries found for this selection.")
     else:
-        for group_key, group_rows in grouped.items() if group_option != "None" else grouped.items():
+        if group_option == "None":
+    for idx, row in grouped["All Entries"]:
+        with st.chat_message("info"):
+            st.markdown(generate_summary(row))
+else:
+    for group_key, group_rows in grouped:
+        with st.expander(f"📍 {group_option}: {group_key}", expanded=True):
+            for _, row in group_rows.iterrows():
+                with st.chat_message("info"):
+                    st.markdown(generate_summary(row))
             with st.expander(f"📍 {group_option}: {group_key}", expanded=True):
                 for row in group_rows:
                     with st.chat_message("info"):
