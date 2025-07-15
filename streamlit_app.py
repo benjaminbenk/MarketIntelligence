@@ -138,6 +138,14 @@ if selected_tags:
         filtered_df["Tags"].apply(lambda x: any(tag in x for tag in selected_tags))
     ]
 
+# --- Search by Info Text ---
+search_text = st.sidebar.text_input("Search Info (keywords)", "")
+if search_text:
+    filtered_df = filtered_df[
+        filtered_df["Info"].str.contains(search_text, case=False, na=False)
+    ]
+
+
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 
 
@@ -148,18 +156,6 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
         for _, row in filtered_df.iterrows():
             with st.chat_message("info"):
                 st.markdown(generate_summary_row(row))
-
- with st.expander("Selected Entry Details", expanded=True):
-            st.markdown(f"**Counterparty**: {row_to_delete['Counterparty']}")
-            st.markdown(f"**Point Name**: {row_to_delete['Point Name']}")
-            st.markdown(f"**Date**: {row_to_delete['Date']}")
-            st.markdown(f"**Point Type**: {row_to_delete['Point Type']}")
-            st.markdown(f"**Country**: {row_to_delete['Country']}")
-            st.markdown(f"**Info**: {row_to_delete['Info']}")
-            st.markdown(f"**Capacity**: {row_to_delete.get('Capacity Value', '')} {row_to_delete.get('Capacity Unit', '')}")
-            st.markdown(f"**Volume**: {row_to_delete.get('Volume Value', '')} {row_to_delete.get('Volume Unit', '')}")
-            st.markdown(f"**Tags**: {row_to_delete['Tags']}")
-
 
 
 st.header("Add, Edit, Delete Info")
