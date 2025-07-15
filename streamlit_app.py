@@ -79,8 +79,9 @@ def generate_summary_row(row):
     counterparty = getattr(row, "Counterparty", "") if hasattr(row, "Counterparty") else row.get("Counterparty", "")
     date = getattr(row, "Date", "") if hasattr(row, "Date") else row.get("Date", "")
     info = getattr(row, "Info", "") if hasattr(row, "Info") else row.get("Info", "")
+    name = getattr(row,"Name","") if hasattr(row,"Name") else row,get("Name","")
 
-    return f"🔹 {info} at **{point_name}** ({point_type}) from **{counterparty}** on **{date}** — tag: _{main_tag}_"
+    return f"🔹 {info} at **{point_name}** ({point_type}) from **{counterparty}** on **{date}** — name: _{name}_"
 
 
 
@@ -140,7 +141,6 @@ if selected_tags:
     ]
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
-st.dataframe(filtered_df, use_container_width=True)
 
 
 with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
