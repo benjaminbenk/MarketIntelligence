@@ -7,6 +7,7 @@ from google.oauth2.service_account import Credentials
 from datetime import datetime
 from io import BytesIO
 import json
+import streamlit.components.v1 as components
 
 # --- Google Sheets Setup ---
 SHEET_NAME = "MarketIntelligenceGAS"
