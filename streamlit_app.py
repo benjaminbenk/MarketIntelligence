@@ -184,6 +184,8 @@ st.subheader(" View Full Details of a Selected Entry")
 #  HTML anchor
 st.markdown("<div id='details_anchor'></div>", unsafe_allow_html=True)
 
+# At the end of your file, just before the modal HTML block, replace the modal section with this fixed one:
+
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state["modal_row"]
 
@@ -210,33 +212,20 @@ if st.session_state.get("show_entry_modal", False):
             max-width: 600px;
             box-shadow: 0 0 20px rgba(0,0,0,0.4);
         }
-        .modal-close {
-            position: absolute;
-            top: 10px;
-            right: 14px;
-            font-size: 20px;
-            font-weight: bold;
-            color: #666;
-            background: none;
-            border: none;
-            cursor: pointer;
-            z-index: 10000;
-        }
         </style>
-
         <div class="modal-overlay"></div>
         <div class="modal-content">
     """, unsafe_allow_html=True)
 
-    # ❌ Close button with native Streamlit button
-    close_col1, close_col2 = st.columns([0.9, 0.1])
-    with close_col2:
-        if st.button("✖", key="close_modal_btn"):
+    # Close button using Streamlit native
+    close1, close2 = st.columns([0.9, 0.1])
+    with close2:
+        if st.button("\u2716 Close", key="close_modal_btn"):
             st.session_state["show_entry_modal"] = False
             st.rerun()
 
-    # ✅ Entry Details
-    st.markdown(f"### 🔎 Entry Details – {row['Point Name']}")
+    # Entry content
+    st.markdown(f"### \ud83d\udd0e Entry Details – {row['Point Name']}")
     st.markdown(f"**Counterparty**: {row['Counterparty']}")
     st.markdown(f"**Point Name**: {row['Point Name']}")
     st.markdown(f"**Time Horizon**: {row['Date']}")
@@ -247,8 +236,8 @@ if st.session_state.get("show_entry_modal", False):
     st.markdown(f"**Tags**: {row['Tags']}")
     st.markdown(f"**Source**: {row['Name']}")
 
-    # Closing the modal container
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
