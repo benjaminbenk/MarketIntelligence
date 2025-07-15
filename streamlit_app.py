@@ -165,7 +165,7 @@ st.subheader(f"Filtered Results for: {selected_counterparty}")
 # --- Single Entry Detail Viewer ---
 st.subheader("🔎 View Full Details of a Selected Entry")
 
-f st.session_state.get("show_details", False) and "selected_entry" in st.session_state:
+if st.session_state.get("show_details", False) and "selected_entry" in st.session_state:
     row = st.session_state["selected_entry"]
     with st.expander("🔎 View Full Details of Selected Entry", expanded=True):
         st.markdown(f"**Counterparty**: {row['Counterparty']}")
@@ -176,6 +176,7 @@ f st.session_state.get("show_details", False) and "selected_entry" in st.session
         st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
         st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
         st.markdown(f"**Source**: {row['Name']}")
+
 
 with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
     if filtered_df.empty:
