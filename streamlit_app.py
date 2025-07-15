@@ -184,17 +184,15 @@ if st.session_state.get("show_entry_modal", False):
     row = st.session_state.get("modal_row", {})
 
     # 1. LÉPÉS: A CSS és a modális ablak nyitó HTML-elemeinek létrehozása
-    # Fontos: A 'modal-content' div itt nincs lezárva!
     st.markdown("""
         <style>
-            /* A modális ablak háttér-overlay-e */
+            /* ... (a CSS kód változatlan) ... */
             .modal-overlay {
                 position: fixed;
                 top: 0; left: 0; right: 0; bottom: 0;
                 background-color: rgba(0, 0, 0, 0.6);
                 z-index: 9998;
             }
-            /* A modális ablak tartalmi része */
             .modal-content {
                 position: fixed;
                 top: 50%;
@@ -214,20 +212,26 @@ if st.session_state.get("show_entry_modal", False):
         <div class="modal-content">
     """, unsafe_allow_html=True)
 
-    # 2. LÉPÉS: A tartalom kiíratása a megnyitott div-en belülre
+    # --- HIBAKERESÉS ---
+    # Ez a sor kiírja a teljes 'row' szótárat, hogy lásd a pontos kulcsneveket.
+    # Ha minden működik, ezt a sort törölheted vagy kikommentelheted (#-vel).
+    st.write(row)
+    # --------------------
+
+    # 2. LÉPÉS: A tartalom kiíratása a HELYES (valószínűleg angol) kulcsokkal
     st.markdown(f"""
         <h3>🔎 Információk – {row.get('Point Name', 'N/A')}</h3>
-        <p><strong>Partner:</strong> {row.get('Partner', 'N/A')}</p>
+        <p><strong>Partner:</strong> {row.get('Counterparty', 'N/A')}</p>
         <p><strong>Pont neve:</strong> {row.get('Point Name', 'N/A')}</p>
-        <p><strong>Időhorizont:</strong> {row.get('Időhorizont', 'N/A')}</p>
-        <p><strong>Ország:</strong> {row.get('Ország', 'N/A')}</p>
+        <p><strong>Időhorizont:</strong> {row.get('Date', 'N/A')}</p>
+        <p><strong>Ország:</strong> {row.get('Country', 'N/A')}</p>
         <p><strong>Info:</strong> {row.get('Info', 'N/A')}</p>
-        <p><strong>Kapacitás:</strong> {row.get('Kapacitás', '')}</p>
-        <p><strong>Mennyiség:</strong> {row.get('Mennyiség', '')}</p>
-        <p><strong>Forrás:</strong> {row.get('Forrás', 'N/A')}</p>
+        <p><strong>Kapacitás:</strong> {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}</p>
+        <p><strong>Mennyiség:</strong> {row.get('Volume Value', '')} {row.get('Volume Unit', '')}</p>
+        <p><strong>Forrás:</strong> {row.get('Name', 'N/A')}</p>
     """)
 
-    # 3. LÉPÉS: A gomb elhelyezése a div-en belül, a tartalom után
+    # 3. LÉPÉS: A gomb elhelyezése
     if st.button("⬅️ Vissza az összefoglalóhoz", key="close_modal_btn"):
         st.session_state["show_entry_modal"] = False
         st.rerun()
