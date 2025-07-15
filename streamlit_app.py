@@ -453,20 +453,58 @@ elif action_mode == "Edit Existing":
         new_date = st.text_input("Date", value=row_to_edit["Date"])
         new_counterparty = st.text_input("Counterparty", value=row_to_edit["Counterparty"])
 
-        # --- Capacity ---
+       # Safely coerce the old values, defaulting to 0.0 if they’re non‑numeric
+        raw_capacity = row_to_edit.get("Capacity Value", "")
+        try:
+            initial_capacity = float(raw_capacity)
+        except (ValueError, TypeError):
+            initial_capacity = 0.0
+    
+        raw_volume = row_to_edit.get("Volume Value", "")
+        try:
+            initial_volume = float(raw_volume)
+        except (ValueError, TypeError):
+            initial_volume = 0.0
+    
+        # --- Capacity (no min/max/step restrictions) ---
         col1, col2 = st.columns([2, 1])
         with col1:
-            new_capacity_value = st.number_input("Capacity", value=float(row_to_edit.get("Capacity Value", 0)), min_value=0.0, step=0.1)
+            new_capacity_value = st.number_input(
+                "Capacity",
+                value=initial_capacity,
+                format="%.3f",        # optional: control decimal places
+                key="new_capacity_value"
+            )
         with col2:
-            new_capacity_unit = st.selectbox("Unit", ["kWh/h", "MWh/h", "GWh/h", "m³/h"], index=0 if row_to_edit.get("Capacity Unit", "") not in ["kWh/h", "MWh/h", "GWh/h", "m³/h"] else ["kWh/h", "MWh/h", "GWh/h", "m³/h"].index(row_to_edit.get("Capacity Unit", "")))
+            unit_options = ["kWh/h", "MWh/h", "GWh/h", "m³/h"]
+            old_cap_unit = row_to_edit.get("Capacity Unit", "")
+            default_idx = unit_options.index(old_cap_unit) if old_cap_unit in unit_options else 0
+            new_capacity_unit = st.selectbox(
+                "Unit",
+                unit_options,
+                index=default_idx,
+                key="new_capacity_unit"
+            )
     
-        # --- Volume ---
+        # --- Volume (no min/max/step restrictions) ---
         col3, col4 = st.columns([2, 1])
         with col3:
-            new_volume_value = st.number_input("Volume", value=float(row_to_edit.get("Volume Value", 0)), min_value=0.0, step=0.1)
+            new_volume_value = st.number_input(
+                "Volume",
+                value=initial_volume,
+                format="%.3f",
+                key="new_volume_value"
+            )
         with col4:
-            new_volume_unit = st.selectbox("Unit", ["MW", "MWh", "GW", "GWh"], index=0 if row_to_edit.get("Volume Unit", "") not in ["MW", "MWh", "GW", "GWh"] else ["MW", "MWh", "GW", "GWh"].index(row_to_edit.get("Volume Unit", "")))
-
+            vol_options = ["MW", "MWh", "GW", "GWh"]
+            old_vol_unit = row_to_edit.get("Volume Unit", "")
+            default_vol_idx = vol_options.index(old_vol_unit) if old_vol_unit in vol_options else 0
+            new_volume_unit = st.selectbox(
+                "Unit",
+                vol_options,
+                index=default_vol_idx,
+                key="new_volume_unit"
+            )
 
         existing_tag_list = [t.strip() for t in row_to_edit["Tags"].split(",")] if row_to_edit["Tags"] else []
         selected_tags = st.multiselect("Select existing tags", options=all_tags, default=existing_tag_list)
