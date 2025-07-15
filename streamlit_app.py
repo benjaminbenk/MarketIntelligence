@@ -216,7 +216,7 @@ if st.session_state.get("show_entry_modal", False):
         with col2:
             if st.button("✖ Close", key="close_modal_button"):
                 st.session_state["show_entry_modal"] = False
-                st.rerun()
+                # st.rerun() # <-- Ezt a sort töröltük!
 
         # Modal content
         st.markdown(f"### 🔎 Entry Details – {row['Point Name']}")
