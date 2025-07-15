@@ -166,6 +166,12 @@ if st.sidebar.button("Clear Selection"):
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 
+params = st.experimental_get_query_params()
+if params.get("close_modal") == ["1"]:
+    st.session_state.show_entry_modal = False
+    # remove the query param so it doesn’t keep firing
+    st.experimental_set_query_params()
+
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state.modal_row
 
@@ -210,7 +216,12 @@ if st.session_state.get("show_entry_modal", False):
     <div class="modal-content">
       <h3>🔎 Information Details – {row.get('Point Name','N/A')}</h3>
       <p><strong>Counterparty:</strong> {row.get('Counterparty','N/A')}</p>
-      <!-- ... all your other fields ... -->
+      <p><strong>Time Horizon:</strong> {row.get('Date','N/A')}</p>
+      <p><strong>Country:</strong> {row.get('Country','N/A')}</p>
+      <p><strong>Info:</strong> {row.get('Info','N/A')}</p>
+      <p><strong>Capacity:</strong> {row.get('Capacity Value','N/A')} {row.get('Capacity Unit','')}</p>
+      <p><strong>Volume:</strong> {row.get('Volume Value','N/A')} {row.get('Volume Unit','')}</p>
+      <p><strong>Source:</strong> {row.get('Name','N/A')}</p>
       <a href="#" class="modal-close" onclick="window.parent.location.reload();">
         ⬅️ Back to Summary
       </a>
