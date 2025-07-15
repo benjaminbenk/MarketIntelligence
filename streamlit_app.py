@@ -157,6 +157,27 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
             with st.chat_message("info"):
                 st.markdown(generate_summary_row(row))
 
+# --- Single Entry Detail Viewer ---
+st.subheader("🔎 View Full Details of a Selected Entry")
+
+if not filtered_df.empty:
+    entry_labels = filtered_df.apply(lambda row: f"{row['Counterparty']} | {row['Point Name']} | {row['Date']}", axis=1)
+    selected_entry = st.selectbox("Select an entry to view full details", options=entry_labels)
+
+    selected_row = filtered_df.loc[entry_labels == selected_entry].iloc[0]
+
+    with st.expander("Selected Entry Details", expanded=True):
+        st.markdown(f"**Counterparty**: {selected_row['Counterparty']}")
+        st.markdown(f"**Point Name**: {selected_row['Point Name']}")
+        st.markdown(f"**Date**: {selected_row['Date']}")
+        st.markdown(f"**Point Type**: {selected_row['Point Type']}")
+        st.markdown(f"**Country**: {selected_row['Country']}")
+        st.markdown(f"**Info**: {selected_row['Info']}")
+        st.markdown(f"**Capacity**: {selected_row.get('Capacity Value', '')} {selected_row.get('Capacity Unit', '')}")
+        st.markdown(f"**Volume**: {selected_row.get('Volume Value', '')} {selected_row.get('Volume Unit', '')}")
+        st.markdown(f"**Tags**: {selected_row['Tags']}")
+
+
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
