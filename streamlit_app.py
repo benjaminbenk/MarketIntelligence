@@ -178,59 +178,72 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
                     st.session_state["modal_row"] = row.to_dict()
                     st.rerun()
 
-# --- Single Entry Detail Viewer ---
+# Show modal if state is active
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state["modal_row"]
 
-    with st.container():
-        # Overlay + modal content CSS
-        st.markdown("""
-            <style>
-            .modal-overlay {
-                position: fixed;
-                top: 0; left: 0; right: 0; bottom: 0;
-                background-color: rgba(0, 0, 0, 0.7);
-                z-index: 9998;
-            }
-            .modal-content {
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background: white;
-                color: black;
-                padding: 2rem;
-                border-radius: 12px;
-                z-index: 9999;
-                width: 90%;
-                max-width: 600px;
-                box-shadow: 0 0 20px rgba(0,0,0,0.4);
-            }
-            </style>
-            <div class="modal-overlay"></div>
-            <div class="modal-content">
+    # Render modal overlay and content
+    st.markdown("""
+        <style>
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            z-index: 9998;
+        }
+        .modal-content {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            color: black;
+            padding: 2rem;
+            border-radius: 12px;
+            z-index: 9999;
+            max-width: 600px;
+            width: 90%;
+        }
+        </style>
+
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content" id="modalContent">
         """, unsafe_allow_html=True)
 
-        # Only Streamlit-native buttons!
-        col1, col2 = st.columns([0.9, 0.1])
-        with col2:
-            if st.button("✖ Close", key="close_modal_button"):
-                st.session_state["show_entry_modal"] = False
-                # st.rerun() # <-- Ezt a sort töröltük!
+    # JS to detect click outside modal and update query param (which triggers rerun)
+    st.markdown("""
+        <script>
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('modalContent');
+            const overlay = document.getElementById('modalOverlay');
+            if (modal && !modal.contains(event.target)) {
+                const url = new URL(window.location);
+                url.searchParams.set('close_modal', '1');
+                window.location.href = url.toString();  // triggers rerun
+            }
+        }, { once: true });
+        </script>
+        """, unsafe_allow_html=True)
 
-        # Modal content
-        st.markdown(f"### 🔎 Entry Details – {row['Point Name']}")
-        st.markdown(f"**Counterparty**: {row['Counterparty']}")
-        st.markdown(f"**Point Name**: {row['Point Name']}")
-        st.markdown(f"**Time Horizon**: {row['Date']}")
-        st.markdown(f"**Country**: {row['Country']}")
-        st.markdown(f"**Info**: {row['Info']}")
-        st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
-        st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-        st.markdown(f"**Source**: {row['Name']}")
+    # Modal content via Streamlit
+    st.markdown(f"### 🔎 Entry Details – {row['Point Name']}")
+    st.markdown(f"**Counterparty**: {row['Counterparty']}")
+    st.markdown(f"**Point Name**: {row['Point Name']}")
+    st.markdown(f"**Time Horizon**: {row['Date']}")
+    st.markdown(f"**Country**: {row['Country']}")
+    st.markdown(f"**Info**: {row['Info']}")
+    st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
+    st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
+    st.markdown(f"**Tags**: {row['Tags']}")
+    st.markdown(f"**Source**: {row['Name']}")
 
-        # Close modal div
-        st.markdown("</div>", unsafe_allow_html=True)
+    # Close modal div
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# Check if query param signals modal close
+if st.query_params.get("close_modal") == "1":
+    st.session_state["show_entry_modal"] = False
+    st.experimental_set_query_params()  # clear query
+    st.rerun()
 
 
 
