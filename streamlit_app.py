@@ -158,6 +158,9 @@ if unified_search:
 
     filtered_df = filtered_df[filtered_df.apply(row_matches_any_field, axis=1)]
 
+if st.sidebar.button("Clear Selection"):
+    st.session_state.pop("selected_entry", None)
+    st.session_state["show_details"] = False
 
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
@@ -175,6 +178,7 @@ if st.session_state.get("show_details", False) and "selected_entry" in st.sessio
         st.markdown(f"**Info**: {row['Info']}")
         st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
         st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
+        st.markdown(f"**Tags**: {row['Tags']}")
         st.markdown(f"**Source**: {row['Name']}")
 
 
@@ -187,10 +191,12 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
             with col1:
                 st.markdown(generate_summary_row(row))
             with col2:
-                # -- Gomb az összefoglalónál
                 if st.button("i", key=f"view_{idx}"):
+                    # Mentsd el a kiválasztott sort és állítsd be a flaget
                     st.session_state["selected_entry"] = row.to_dict()
                     st.session_state["show_details"] = True
+                    st.experimental_rerun()  # hogy azonnal frissüljön az állapot
+
 
 
 
