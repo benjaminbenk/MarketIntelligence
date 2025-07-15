@@ -139,7 +139,7 @@ if selected_tags:
     ]
 
 # --- Universal Search Box (Allrounder) ---
-unified_search = st.sidebar.text_input("🔍 Search All Fields")
+unified_search = st.sidebar.text_input("Search All Fields")
 
 if unified_search:
     search_lower = unified_search.lower()
@@ -167,29 +167,31 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
     if filtered_df.empty:
         st.info("No entries found for this selection.")
     else:
-        for _, row in filtered_df.iterrows():
-            with st.chat_message("info"):
+        for idx, row in filtered_df.iterrows():
+            col1, col2 = st.columns([0.95, 0.05])
+            with col1:
                 st.markdown(generate_summary_row(row))
+            with col2:
+                if st.button("i", key=f"view_{idx}"):
+                    st.session_state["selected_entry"] = row.to_dict()
 
 # --- Single Entry Detail Viewer ---
 st.subheader("🔎 View Full Details of a Selected Entry")
 
-if not filtered_df.empty:
-    entry_labels = filtered_df.apply(lambda row: f"{row['Counterparty']} | {row['Point Name']} | {row['Date']}", axis=1)
-    selected_entry = st.selectbox("Select an entry to view full details", options=entry_labels)
+if "selected_entry" in st.session_state:
+    row = st.session_state["selected_entry"]
+    with st.expander("🔎 View Full Details of Selected Entry", expanded=True):
+        st.markdown(f"**Counterparty**: {row['Counterparty']}")
+        st.markdown(f"**Point Name**: {row['Point Name']}")
+        st.markdown(f"**Date**: {row['Date']}")
+        st.markdown(f"**Point Type**: {row['Point Type']}")
+        st.markdown(f"**Country**: {row['Country']}")
+        st.markdown(f"**Info**: {row['Info']}")
+        st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
+        st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
+        st.markdown(f"**Tags**: {row['Tags']}")
+        st.markdown(f"**Source**: {row['Name']}")
 
-    selected_row = filtered_df.loc[entry_labels == selected_entry].iloc[0]
-
-    with st.expander("Selected Entry Details", expanded=True):
-        st.markdown(f"**Counterparty**: {selected_row['Counterparty']}")
-        st.markdown(f"**Point Name**: {selected_row['Point Name']}")
-        st.markdown(f"**Date**: {selected_row['Date']}")
-        st.markdown(f"**Point Type**: {selected_row['Point Type']}")
-        st.markdown(f"**Country**: {selected_row['Country']}")
-        st.markdown(f"**Info**: {selected_row['Info']}")
-        st.markdown(f"**Capacity**: {selected_row.get('Capacity Value', '')} {selected_row.get('Capacity Unit', '')}")
-        st.markdown(f"**Volume**: {selected_row.get('Volume Value', '')} {selected_row.get('Volume Unit', '')}")
-        st.markdown(f"**Tags**: {selected_row['Tags']}")
 
 
 
@@ -300,7 +302,7 @@ if st.button("Save Entry"):
         st.warning("Looks like this entry already exists.")
         
         summary = generate_summary(info, point_name, counterparty, date_repr)
-        st.markdown(f"📝 **Generated Summary:** {summary}")
+        st.markdown(f"**Generated Summary:** {summary}")
     
     else:
         new_row = {
