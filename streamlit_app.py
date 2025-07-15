@@ -228,19 +228,6 @@ if st.session_state.get("show_entry_modal", False):
         }}, {{ once: true }});
         </script>
     """, unsafe_allow_html=True)
-
-    <p style="text-align: right; margin-top: 2rem;">
-    <a href="?close_modal=1" style="
-        background-color: #444;
-        color: white;
-        padding: 8px 16px;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-    ">⬅️ Back to Summary</a>
-</p>
-
-
     # Modal content via Streamlit
     st.markdown(f"### 🔎 Information Details – {row['Point Name']}")
     st.markdown(f"**Counterparty**: {row['Counterparty']}")
@@ -250,10 +237,21 @@ if st.session_state.get("show_entry_modal", False):
     st.markdown(f"**Info**: {row['Info']}")
     st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
     st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-    st.markdown(f"**Source**: {row['Name']}")
+    st.markdown("""
+        <p style="text-align: right; margin-top: 2rem;">
+            <a href="?close_modal=1" style="
+                background-color: #444;
+                color: white;
+                padding: 8px 16px;
+                text-decoration: none;
+                border-radius: 5px;
+                font-weight: bold;
+            ">⬅️ Back to Summary</a>
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Close modal div
-    st.markdown("</div>", unsafe_allow_html=True)
+
 
 # Check if query param signals modal close
 if st.query_params.get("close_modal") == "1":
