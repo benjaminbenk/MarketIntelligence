@@ -178,49 +178,60 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
                     st.session_state["show_entry_modal"] = True
                     st.session_state["modal_row"] = {k.strip(): v for k, v in row.to_dict().items()}
                     st.rerun()
+
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state.get("modal_row", {})
 
-    st.markdown("""
-        <style>
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            z-index: 9998;
-        }
-        .modal-content {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            color: black;
-            padding: 2rem;
-            border-radius: 12px;
-            z-index: 9999;
-            max-width: 600px;
-            width: 90%;
-        }
-        </style>
-        <div class="modal-overlay" id="modalOverlay"></div>
-        <div class="modal-content" id="modalContent">
-    """, unsafe_allow_html=True)
+    # build one big HTML string with your CSS, the data, and a placeholder for the close button
+    html = f"""
+    <style>
+      .modal-overlay {{
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background-color: rgba(0, 0, 0, 0.6);
+          z-index: 9998;
+      }}
+      .modal-content {{
+          position: fixed;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          background: white;
+          color: black;
+          padding: 2rem;
+          border-radius: 12px;
+          z-index: 9999;
+          max-width: 600px;
+          width: 90%;
+      }}
+      .modal-content h3 {{
+          margin-top: 0;
+      }}
+      .modal-content p {{
+          margin: 0.5rem 0;
+      }}
+    </style>
 
-    st.markdown(f"### 🔎 Information Details – {row.get('Point Name', 'N/A')}")
-    st.markdown(f"**Counterparty**: {row.get('Counterparty', 'N/A')}")
-    st.markdown(f"**Point Name**: {row.get('Point Name', 'N/A')}")
-    st.markdown(f"**Time Horizon**: {row.get('Date', 'N/A')}")
-    st.markdown(f"**Country**: {row.get('Country', 'N/A')}")
-    st.markdown(f"**Info**: {row.get('Info', 'N/A')}")
-    st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
-    st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-    st.markdown(f"**Source**: {row.get('Name', 'N/A')}")
+    <div class="modal-overlay"></div>
+    <div class="modal-content">
+      <h3>🔎 Information Details – {row.get('Point Name', 'N/A')}</h3>
+      <p><strong>Counterparty:</strong> {row.get('Counterparty', 'N/A')}</p>
+      <p><strong>Point Name:</strong> {row.get('Point Name', 'N/A')}</p>
+      <p><strong>Time Horizon:</strong> {row.get('Date', 'N/A')}</p>
+      <p><strong>Country:</strong> {row.get('Country', 'N/A')}</p>
+      <p><strong>Info:</strong> {row.get('Info', 'N/A')}</p>
+      <p><strong>Capacity:</strong> {row.get('Capacity Value', 'N/A')} {row.get('Capacity Unit', '')}</p>
+      <p><strong>Volume:</strong> {row.get('Volume Value', 'N/A')} {row.get('Volume Unit', '')}</p>
+      <p><strong>Source:</strong> {row.get('Name', 'N/A')}</p>
+    </div>
+    """
 
-    st.markdown("</div>", unsafe_allow_html=True)  # closes .modal-content
+    # render that HTML inside an <iframe>-like component
+    components.html(html, height=600, width=800)
 
+    # your normal Streamlit button to close it
     if st.button("⬅️ Back to Summary", key="close_modal_btn"):
         st.session_state["show_entry_modal"] = False
-        st.rerun()
+        st.experimental_rerun()
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
