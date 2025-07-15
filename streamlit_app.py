@@ -227,7 +227,6 @@ if st.session_state.get("show_entry_modal", False):
         st.markdown(f"**Info**: {row['Info']}")
         st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
         st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-        st.markdown(f"**Tags**: {row['Tags']}")
         st.markdown(f"**Source**: {row['Name']}")
 
         # Close modal div
