@@ -166,11 +166,18 @@ if st.sidebar.button("Clear Selection"):
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 
+# 1) Detect “close_modal” in the URL and clear the modal flag,
+#    then reset the URL to *only* your filter params (removing close_modal).
 params = st.query_params
 if params.get("close_modal") == ["1"]:
     st.session_state.show_entry_modal = False
-    # clear all query params
-    st.set_query_params()
+
+    # Rebuild params minus close_modal
+    new_params = {k: v for k, v in params.items() if k != "close_modal"}
+    # Flatten lists to single values for urlencode
+    flat = {k: (v if isinstance(v, str) else v[0]) for k, v in new_params.items()}
+    st.set_query_params(**flat)
+
     
 if st.session_state.get("show_entry_modal", False):
     row = st.session_state.modal_row
