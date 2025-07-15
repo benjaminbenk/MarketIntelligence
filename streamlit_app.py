@@ -138,12 +138,26 @@ if selected_tags:
         filtered_df["Tags"].apply(lambda x: any(tag in x for tag in selected_tags))
     ]
 
-# --- Search by Info Text ---
-search_text = st.sidebar.text_input("Search Info (keywords)", "")
-if search_text:
-    filtered_df = filtered_df[
-        filtered_df["Info"].str.contains(search_text, case=False, na=False)
-    ]
+# --- Universal Search Box (Allrounder) ---
+unified_search = st.sidebar.text_input("🔍 Search All Fields")
+
+if unified_search:
+    search_lower = unified_search.lower()
+    
+    def row_matches_any_field(row):
+        fields_to_search = [
+            str(row.get("Info", "")),
+            str(row.get("Country", "")),
+            str(row.get("Point Name", "")),
+            str(row.get("Point Type", "")),
+            str(row.get("Counterparty", "")),
+            str(row.get("Date", "")),
+            str(row.get("Tags", ""))
+        ]
+        return any(search_lower in field.lower() for field in fields_to_search)
+
+    filtered_df = filtered_df[filtered_df.apply(row_matches_any_field, axis=1)]
+
 
 
 st.subheader(f"Filtered Results for: {selected_counterparty}")
