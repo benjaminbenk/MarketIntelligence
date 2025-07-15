@@ -225,7 +225,7 @@ if st.session_state.get("show_entry_modal", False):
         """, unsafe_allow_html=True)
 
     # Modal content via Streamlit
-    st.markdown(f"### 🔎 Entry Details – {row['Point Name']}")
+    st.markdown(f"### 🔎 Information Details – {row['Point Name']}")
     st.markdown(f"**Counterparty**: {row['Counterparty']}")
     st.markdown(f"**Point Name**: {row['Point Name']}")
     st.markdown(f"**Time Horizon**: {row['Date']}")
@@ -233,7 +233,6 @@ if st.session_state.get("show_entry_modal", False):
     st.markdown(f"**Info**: {row['Info']}")
     st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
     st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-    st.markdown(f"**Tags**: {row['Tags']}")
     st.markdown(f"**Source**: {row['Name']}")
 
     # Close modal div
@@ -243,8 +242,6 @@ if st.session_state.get("show_entry_modal", False):
 if st.query_params.get("close_modal") == "1":
     st.session_state["show_entry_modal"] = False
     st.experimental_set_query_params()  # clear query
-    st.rerun()
-
 
 
 st.header("Add, Edit, Delete Info")
