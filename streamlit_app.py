@@ -162,10 +162,9 @@ if st.sidebar.button("Clear Selection"):
     st.session_state.pop("selected_entry", None)
     st.session_state["show_details"] = False
 
-
 st.subheader(f"Filtered Results for: {selected_counterparty}")
 
-with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expanded=True):
+with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expanded=True):
     if filtered_df.empty:
         st.info("No entries found for this selection.")
     else:
@@ -174,27 +173,33 @@ with st.expander(f"📝 Summary of Entries for {selected_counterparty}", expande
             with col1:
                 st.markdown(generate_summary_row(row))
             with col2:
-                # gomb a modal megnyitásához
-                if st.button("ℹ️", key=f"modal_button_{idx}"):
-                    # fontos: modal csak az esemény bekövetkezése után jelenhet meg
-                    st.session_state[f"show_modal_{idx}"] = True
+                if st.button("i", key=f"modal_button_{idx}"):
+                    st.session_state["show_entry_modal"] = True
+                    st.session_state["modal_row"] = row.to_dict()
+                    st.rerun()
 
-            # külön blokkban figyeljük, hogy meg kell-e jeleníteni a modal-t
-            if st.session_state.get(f"show_modal_{idx}", False):
-                with st.modal(f"🔎 Entry Details – {row['Point Name']}"):
-                    st.markdown(f"**Counterparty**: {row['Counterparty']}")
-                    st.markdown(f"**Point Name**: {row['Point Name']}")
-                    st.markdown(f"**Time horizon**: {row['Date']}")
-                    st.markdown(f"**Country**: {row['Country']}")
-                    st.markdown(f"**Info**: {row['Info']}")
-                    st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
-                    st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-                    st.markdown(f"**Tags**: {row['Tags']}")
-                    st.markdown(f"**Source**: {row['Name']}")
-                    
-                    if st.button("Close"):
-                        st.session_state[f"show_modal_{idx}"] = False
+# --- Single Entry Detail Viewer ---
+st.subheader("🔎 View Full Details of a Selected Entry")
 
+# 👇 HTML anchor
+st.markdown("<div id='details_anchor'></div>", unsafe_allow_html=True)
+
+if st.session_state.get("show_entry_modal", False):
+    row = st.session_state["modal_row"]
+    with st.expander(f"🔎 Entry Details – {row['Point Name']}", expanded=True):
+        st.markdown(f"**Counterparty**: {row['Counterparty']}")
+        st.markdown(f"**Point Name**: {row['Point Name']}")
+        st.markdown(f"**Time horizon**: {row['Date']}")
+        st.markdown(f"**Country**: {row['Country']}")
+        st.markdown(f"**Info**: {row['Info']}")
+        st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
+        st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
+        st.markdown(f"**Tags**: {row['Tags']}")
+        st.markdown(f"**Source**: {row['Name']}")
+
+    if st.button("Close Details"):
+        st.session_state["show_entry_modal"] = False
+        st.rerun()
 
 st.markdown("---")
 if st.button("⬅️ Vissza az összes bejegyzéshez"):
@@ -206,6 +211,7 @@ if st.button("⬅️ Vissza az összes bejegyzéshez"):
             }
         </script>
     """, unsafe_allow_html=True)
+
 
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
