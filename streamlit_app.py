@@ -178,47 +178,59 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
                     st.session_state["modal_row"] = row.to_dict()
                     st.rerun()
 
+# Ellenőrizzük, hogy a modális ablakot meg kell-e jeleníteni
 if st.session_state.get("show_entry_modal", False):
+    # A megjelenítendő adatokat egyszer olvassuk ki a session state-ből
     row = st.session_state.get("modal_row", {})
 
-    st.markdown("""
+    # Az összes adatot egyetlen, formázott stringbe gyűjtjük
+    # a .get() metódus használatával elkerüljük a hibákat, ha egy kulcs hiányzik
+    details_html = f"""
+        <h3>🔎 Információk – {row.get('Point Name', 'N/A')}</h3>
+        <p><strong>Partner:</strong> {row.get('Counterparty', 'N/A')}</p>
+        <p><strong>Pont neve:</strong> {row.get('Point Name', 'N/A')}</p>
+        <p><strong>Időhorizont:</strong> {row.get('Date', 'N/A')}</p>
+        <p><strong>Ország:</strong> {row.get('Country', 'N/A')}</p>
+        <p><strong>Info:</strong> {row.get('Info', 'N/A')}</p>
+        <p><strong>Kapacitás:</strong> {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}</p>
+        <p><strong>Mennyiség:</strong> {row.get('Volume Value', '')} {row.get('Volume Unit', '')}</p>
+        <p><strong>Forrás:</strong> {row.get('Name', 'N/A')}</p>
+    """
+
+    # A CSS stílust és a HTML struktúrát egyetlen st.markdown hívásban jelenítjük meg
+    st.markdown(f"""
         <style>
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0, 0, 0, 0.6);
-            z-index: 9998;
-        }
-        .modal-content {
-            position: fixed;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            color: black;
-            padding: 2rem;
-            border-radius: 12px;
-            z-index: 9999;
-            max-width: 600px;
-            width: 90%;
-        }
+            /* A modális ablak háttér-overlay-e */
+            .modal-overlay {{
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background-color: rgba(0, 0, 0, 0.6);
+                z-index: 9998;
+            }}
+            /* A modális ablak tartalmi része */
+            .modal-content {{
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                color: black;
+                padding: 2rem;
+                border-radius: 12px;
+                z-index: 9999;
+                max-width: 600px;
+                width: 90%;
+            }}
         </style>
+
         <div class="modal-overlay" id="modalOverlay"></div>
         <div class="modal-content" id="modalContent">
+            {details_html}
+        </div>
     """, unsafe_allow_html=True)
 
-    st.markdown(f"### 🔎 Information Details – {row.get('Point Name', 'N/A')}")
-    st.markdown(f"**Counterparty**: {row.get('Counterparty', 'N/A')}")
-    st.markdown(f"**Point Name**: {row.get('Point Name', 'N/A')}")
-    st.markdown(f"**Time Horizon**: {row.get('Date', 'N/A')}")
-    st.markdown(f"**Country**: {row.get('Country', 'N/A')}")
-    st.markdown(f"**Info**: {row.get('Info', 'N/A')}")
-    st.markdown(f"**Capacity**: {row.get('Capacity Value', '')} {row.get('Capacity Unit', '')}")
-    st.markdown(f"**Volume**: {row.get('Volume Value', '')} {row.get('Volume Unit', '')}")
-    st.markdown(f"**Source**: {row.get('Name', 'N/A')}")
-
-    st.markdown("</div>", unsafe_allow_html=True)  # closes .modal-content
-
-    if st.button("⬅️ Back to Summary", key="close_modal_btn"):
+    # A gombot a HTML blokkon kívül helyezzük el, hogy Streamlit komponens maradjon
+    if st.button("⬅️ Vissza az összefoglalóhoz", key="close_modal_btn"):
         st.session_state["show_entry_modal"] = False
         st.rerun()
 
