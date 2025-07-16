@@ -295,6 +295,21 @@ if st.session_state.get("show_entry_modal", False):
     """
 
     st.markdown(modal_html, unsafe_allow_html=True)
+    
+with st.expander(f"📊 Interactive Summary Table for {selected_counterparty}", expanded=True):
+    if filtered_df.empty:
+        st.info("No entries found for this selection.")
+    else:
+        # Optional: reorder or format columns
+        display_df = filtered_df[REQUIRED_COLUMNS].copy()
+
+        # Display interactive table
+        st.dataframe(
+            display_df,
+            use_container_width=True,
+            hide_index=True
+        )
+    
 
 with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expanded=True):
     if filtered_df.empty:
