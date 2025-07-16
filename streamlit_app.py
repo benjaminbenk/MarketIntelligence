@@ -267,6 +267,7 @@ if st.session_state.get("show_entry_modal", False):
       <p><strong>Source:</strong> {row.get('Name','N/A')}</p>
       <!-- real link that reloads with close_modal=1 -->
       <a href="{close_href}" class="modal-close" target="_top">
+          X
       </a>
     </div>
     """
