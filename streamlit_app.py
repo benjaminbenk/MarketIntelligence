@@ -309,7 +309,7 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
             with col1:
                 st.markdown(generate_summary_row(row))
             with col2:
-                if st.button("INFO", key=f"modal_button_{idx}"):
+                if st.button("I", key=f"modal_button_{idx}"):
                     st.session_state["show_entry_modal"] = True
                     st.session_state["modal_row"] = {k.strip(): v for k, v in row.to_dict().items()}
                     st.rerun()
