@@ -209,7 +209,20 @@ st.sidebar.button(
     "Clear Selection",
     on_click=clear_all_filters
 )
-    
+
+# --- Sorting Options ---
+st.sidebar.header("↕️ Sort Options")
+sort_column = st.sidebar.selectbox("Sort by Column", options=filtered_df.columns.tolist())
+sort_order = st.sidebar.radio("Sort Order", ["Ascending", "Descending"], horizontal=True)
+
+# Apply sorting
+filtered_df = filtered_df.sort_values(
+    by=sort_column,
+    ascending=(sort_order == "Ascending"),
+    na_position="last"
+)
+
+
 st.subheader(f"Filtered Results for: {selected_counterparty}")
     
 if st.session_state.get("show_entry_modal", False):
