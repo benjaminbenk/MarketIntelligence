@@ -20,7 +20,7 @@ SCOPES = [
 ]
 
 REQUIRED_COLUMNS = [
-    "Name", "Counterparty", "Country", "Point Type", "Point Name", "Date", "Info", "Capacity Value", "Capacity Unit", "Volume Value", "Volume Unit","Tags"
+    "Timestamp","Name", "Counterparty", "Country", "Point Type", "Point Name", "Date", "Info", "Capacity Value", "Capacity Unit", "Volume Value", "Volume Unit","Tags"
 ]
 
 COUNTRIES_LIST = [
@@ -83,8 +83,8 @@ def generate_summary_row(row):
     date = getattr(row, "Date", "") if hasattr(row, "Date") else row.get("Date", "")
     info = getattr(row, "Info", "") if hasattr(row, "Info") else row.get("Info", "")
     name = getattr(row, "Name", "") if hasattr(row, "Name") else row.get("Name", "")
-
-    return f"🔹 {info} at **{point_name}** ({point_type}) from **{counterparty}** on **{date}** — source: _{name}_"
+    timestamp = getattr(row, "Timestamp", "") if hasattr(row, "Timestamp") else row.get("Timestamp", "")
+    return f"🕒 {timestamp} — {info} at **{point_name}** ({point_type}) from **{counterparty}** on **{date}** — source: _{name}_"
 
 def clear_all_filters():
     for key in [
@@ -271,6 +271,7 @@ if st.session_state.get("show_entry_modal", False):
     <div class="modal-overlay"></div>
     <div class="modal-content">
       <h3>🔎 Information Details – {row.get('Point Name','N/A')}</h3>
+      <p><strong>Timestamp:</strong> {row.get('Timestamp','N/A')}</p>
       <p><strong>Counterparty:</strong> {row.get('Counterparty','N/A')}</p>
       <p><strong>Time Horizon:</strong> {row.get('Date','N/A')}</p>
       <p><strong>Country:</strong> {row.get('Country','N/A')}</p>
@@ -412,6 +413,7 @@ if st.button("Save Entry"):
     
     else:
         new_row = {
+            "Timestamp": datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
             "Name": name,
             "Counterparty": counterparty,
             "Country": country,
@@ -563,6 +565,7 @@ elif action_mode == "Delete":
 
         # Step 2: Show confirmation and delete
         with st.expander("Selected Entry Details", expanded=True):
+            st.markdown(f"**Original Timestamp:** {row_to_edit.get('Timestamp', 'N/A')}")
             st.markdown(f"**Counterparty**: {row_to_delete['Counterparty']}")
             st.markdown(f"**Point Name**: {row_to_delete['Point Name']}")
             st.markdown(f"**Date**: {row_to_delete['Date']}")
