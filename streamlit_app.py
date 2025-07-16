@@ -372,14 +372,14 @@ if action_mode == "Add New":
             # --- Capacity ---
         col1, col2 = st.columns([2, 1])
         with col1:
-            capacity_value = st.number_input("Capacity", min_value=0.0, step=0.1)
+            capacity_value = st.number_input("Capacity")
         with col2:
             capacity_unit = st.selectbox("Unit", ["kWh/h", "MWh/h", "GWh/h", "m³/h"])
         
         # --- Volume ---
         col3, col4 = st.columns([2, 1])
         with col3:
-            volume_value = st.number_input("Volume", min_value=0.0, step=0.1)
+            volume_value = st.number_input("Volume")
         with col4:
             volume_unit = st.selectbox("Unit", ["MW", "MWh", "GW", "GWh"])
 
