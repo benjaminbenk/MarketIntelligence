@@ -183,6 +183,14 @@ if st.session_state.selected_tags:
         filtered_df["Tags"].apply(lambda x: any(tag in x for tag in st.session_state.selected_tags))
     ]
 
+# --- Time Horizon Filter ---
+st.sidebar.markdown("### Time Horizon")
+time_horizon_input = st.sidebar.text_input("Search Date / Period (exact or partial match)", key="time_horizon_input")
+if time_horizon_input:
+    filtered_df = filtered_df[
+        filtered_df["Date"].astype(str).str.contains(time_horizon_input.strip(), case=False, na=False)
+    ]
+
 # Universal Search Box
 unified_search = st.sidebar.text_input(
     "Search All Fields",
@@ -292,12 +300,16 @@ with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expande
     if filtered_df.empty:
         st.info("No entries found for this selection.")
     else:
+        # Sort most recent first
+        if "Timestamp" in filtered_df.columns:
+            filtered_df = filtered_df.sort_values(by="Timestamp", ascending=False, na_position="last")
+
         for idx, row in filtered_df.iterrows():
             col1, col2 = st.columns([0.95, 0.05])
             with col1:
                 st.markdown(generate_summary_row(row))
             with col2:
-                if st.button("i", key=f"modal_button_{idx}"):
+                if st.button("Furher information", key=f"modal_button_{idx}"):
                     st.session_state["show_entry_modal"] = True
                     st.session_state["modal_row"] = {k.strip(): v for k, v in row.to_dict().items()}
                     st.rerun()
