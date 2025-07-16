@@ -184,7 +184,6 @@ if st.session_state.selected_tags:
     ]
 
 # --- Time Horizon Filter ---
-st.sidebar.markdown("### Time Horizon")
 time_horizon_input = st.sidebar.text_input("Search Date / Period (exact or partial match)", key="time_horizon_input")
 if time_horizon_input:
     filtered_df = filtered_df[
@@ -309,25 +308,12 @@ with st.expander(f"📊 Interactive Summary Table for {selected_counterparty}", 
             use_container_width=True,
             hide_index=True
         )
-    
-
-with st.expander(f"📋 Summary of Entries for {selected_counterparty}", expanded=True):
-    if filtered_df.empty:
-        st.info("No entries found for this selection.")
-    else:
-        # Sort most recent first
-        if "Timestamp" in filtered_df.columns:
-            filtered_df = filtered_df.sort_values(by="Timestamp", ascending=False, na_position="last")
-
-        for idx, row in filtered_df.iterrows():
-            col1, col2 = st.columns([0.95, 0.05])
-            with col1:
-                st.markdown(generate_summary_row(row))
-            with col2:
-                if st.button("I", key=f"modal_button_{idx}"):
-                    st.session_state["show_entry_modal"] = True
-                    st.session_state["modal_row"] = {k.strip(): v for k, v in row.to_dict().items()}
-                    st.rerun()
+   selected_cols = st.multiselect(
+    "Select columns to show",
+    options=filtered_df.columns.tolist(),
+    default=REQUIRED_COLUMNS
+)
+st.dataframe(filtered_df[selected_cols], use_container_width=True, hide_index=True) 
                     
 st.header("Add, Edit, Delete Info")
 action_mode = st.radio("Mode", ["Add New", "Edit Existing", "Delete"])
