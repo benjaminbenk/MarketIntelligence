@@ -307,11 +307,13 @@ with st.expander(f"📊 Interactive Summary Table for {selected_counterparty}", 
             default=REQUIRED_COLUMNS
         )
 
-        # Show all columns if "All" is selected
+        # Prevent error: remove "All" before using as indexer
         if "All" in selected_cols:
             display_df = filtered_df[all_columns].copy()
         else:
-            display_df = filtered_df[selected_cols].copy()
+            # Make sure selected_cols only contains valid columns
+            valid_cols = [col for col in selected_cols if col in all_columns]
+            display_df = filtered_df[valid_cols].copy()
 
         st.dataframe(
             display_df,
