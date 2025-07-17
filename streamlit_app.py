@@ -603,7 +603,6 @@ elif action_mode == "Delete":
 
         # Step 2: Show confirmation and delete
         with st.expander("Selected Entry Details", expanded=True):
-            st.markdown(f"**Original Timestamp:** {row_to_edit.get('Timestamp', 'N/A')}")
             st.markdown(f"**Counterparty**: {row_to_delete['Counterparty']}")
             st.markdown(f"**Point Name**: {row_to_delete['Point Name']}")
             st.markdown(f"**Date**: {row_to_delete['Date']}")
