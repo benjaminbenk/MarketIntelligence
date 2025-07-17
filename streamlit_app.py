@@ -299,20 +299,21 @@ with st.expander(f"📊 Interactive Summary Table for {selected_counterparty}", 
     if filtered_df.empty:
         st.info("No entries found for this selection.")
     else:
-        # Optional: reorder or format columns
-        display_df = filtered_df[REQUIRED_COLUMNS].copy()
+        # Optional: column selector
+        selected_cols = st.multiselect(
+            "Select columns to show",
+            options=filtered_df.columns.tolist(),
+            default=REQUIRED_COLUMNS
+        )
 
         # Display interactive table
+        display_df = filtered_df[selected_cols].copy()
         st.dataframe(
             display_df,
             use_container_width=True,
             hide_index=True
         )
-   selected_cols = st.multiselect(
-   "Select columns to show",
-   options=filtered_df.columns.tolist(),
-   default=REQUIRED_COLUMNS
-)
+
 st.dataframe(filtered_df[selected_cols], use_container_width=True, hide_index=True) 
                     
 st.header("Add, Edit, Delete Info")
@@ -396,19 +397,30 @@ if action_mode == "Add New":
         if close_matches:
             st.caption(f"Suggestions for '{tag}': {', '.join(close_matches)}")
 
-    # --- Capacity ---
-    col1, col2 = st.columns([2, 1])
-    with col1:
-            capacity_value = st.number_input("Capacity")
-    with col2:
-            capacity_unit = st.selectbox("Unit", ["kWh/h", "MWh/h", "GWh/h", "m³/h"])
-            
-            # --- Volume ---
-    col3, col4 = st.columns([2, 1])
-    with col3:
-            volume_value = st.number_input("Volume")
-    with col4:
-            volume_unit = st.selectbox("Unit", ["MW", "MWh", "GW", "GWh"])
+   # --- Optional Capacity Input ---
+    use_capacity = st.checkbox("Add Capacity?", value=False)
+    if use_capacity:
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            capacity_value = st.number_input("Capacity", key="capacity_value_input")
+        with col2:
+            capacity_unit = st.selectbox("Capacity Unit", ["kWh/h", "MWh/h", "GWh/h", "m³/h"], key="capacity_unit_input")
+    else:
+        capacity_value = ""
+        capacity_unit = ""
+    
+    # --- Optional Volume Input ---
+    use_volume = st.checkbox("Add Volume?", value=False)
+    if use_volume:
+        col3, col4 = st.columns([2, 1])
+        with col3:
+            volume_value = st.number_input("Volume", key="volume_value_input")
+        with col4:
+            volume_unit = st.selectbox("Volume Unit", ["MW", "MWh", "GW", "GWh"], key="volume_unit_input")
+    else:
+        volume_value = ""
+        volume_unit = ""
+
 
     all_selected_tags = selected_tags + typed_tags
     tags_value = ", ".join(sorted(set(all_selected_tags)))
