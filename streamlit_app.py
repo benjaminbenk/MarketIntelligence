@@ -299,20 +299,26 @@ with st.expander(f"📊 Interactive Summary Table for {selected_counterparty}", 
     if filtered_df.empty:
         st.info("No entries found for this selection.")
     else:
-        # Optional: column selector
+        all_columns = filtered_df.columns.tolist()
+
         selected_cols = st.multiselect(
             "Select columns to show",
-            options=filtered_df.columns.tolist(),
+            options=["All"] + all_columns,
             default=REQUIRED_COLUMNS
         )
 
-        # Display interactive table
-        display_df = filtered_df[selected_cols].copy()
+        # Show all columns if "All" is selected
+        if "All" in selected_cols:
+            display_df = filtered_df[all_columns].copy()
+        else:
+            display_df = filtered_df[selected_cols].copy()
+
         st.dataframe(
             display_df,
             use_container_width=True,
             hide_index=True
         )
+
 
 st.dataframe(filtered_df[selected_cols], use_container_width=True, hide_index=True) 
                     
