@@ -313,7 +313,13 @@ with st.expander(f"📊 Interactive Summary Table for {selected_counterparty}", 
         else:
             # Make sure selected_cols only contains valid columns
             valid_cols = [col for col in selected_cols if col in all_columns]
-            display_df = filtered_df[valid_cols].copy()
+
+            # Fallback: if nothing valid selected, show all
+            if not valid_cols:
+                display_df = filtered_df[all_columns].copy()
+            else:
+                display_df = filtered_df[valid_cols].copy()
+
 
         st.dataframe(
             display_df,
