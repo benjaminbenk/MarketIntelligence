@@ -309,9 +309,9 @@ with st.expander(f"📊 Interactive Summary Table for {selected_counterparty}", 
             hide_index=True
         )
    selected_cols = st.multiselect(
-    "Select columns to show",
-    options=filtered_df.columns.tolist(),
-    default=REQUIRED_COLUMNS
+   "Select columns to show",
+   options=filtered_df.columns.tolist(),
+   default=REQUIRED_COLUMNS
 )
 st.dataframe(filtered_df[selected_cols], use_container_width=True, hide_index=True) 
                     
