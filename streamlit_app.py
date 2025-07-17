@@ -299,7 +299,7 @@ with st.expander(f"📊 Interactive Summary Table for {selected_counterparty}", 
     if filtered_df.empty:
         st.info("No entries found for this selection.")
     else:
-        all_columns = filtered_df.columns.tolist()
+        all_columns = list(filtered_df.columns)
 
         selected_cols = st.multiselect(
             "Select columns to show",
@@ -307,26 +307,24 @@ with st.expander(f"📊 Interactive Summary Table for {selected_counterparty}", 
             default=REQUIRED_COLUMNS
         )
 
-        # Prevent error: remove "All" before using as indexer
+        # Handle column selection safely
         if "All" in selected_cols:
-            display_df = filtered_df[all_columns].copy()
+            display_df = filtered_df.copy()
         else:
-            # Make sure selected_cols only contains valid columns
+            # Sanitize column names
             valid_cols = [col for col in selected_cols if col in all_columns]
 
-            # Fallback: if nothing valid selected, show all
             if not valid_cols:
-                display_df = filtered_df[all_columns].copy()
+                st.warning("No valid columns selected. Displaying all.")
+                display_df = filtered_df.copy()
             else:
                 display_df = filtered_df[valid_cols].copy()
-
 
         st.dataframe(
             display_df,
             use_container_width=True,
             hide_index=True
         )
-
 
 st.dataframe(filtered_df[selected_cols], use_container_width=True, hide_index=True) 
                     
