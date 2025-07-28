@@ -184,11 +184,129 @@ if st.session_state.selected_tags:
     ]
 
 # --- Time Horizon Filter ---
-time_horizon_input = st.sidebar.text_input("Search Date / Period (exact or partial match)", key="time_horizon_input")
-if time_horizon_input:
-    filtered_df = filtered_df[
-        filtered_df["Date"].astype(str).str.contains(time_horizon_input.strip(), case=False, na=False)
+st.sidebar.header("📅 Date Filter")
+
+# Date search mode selection
+date_search_mode = st.sidebar.radio(
+    "Date Search Mode",
+    ["Text Search", "Gas Market Periods"],
+    key="date_search_mode"
+)
+
+if date_search_mode == "Text Search":
+    time_horizon_input = st.sidebar.text_input(
+        "Search Date (exact or partial match)",
+        key="time_horizon_input",
+        help="Search for dates like '2024-03-15' or gas periods like 'GY24'"
+    )
+    if time_horizon_input:
+        filtered_df = filtered_df[
+            filtered_df["Date"].astype(str).str.contains(time_horizon_input.strip(), case=False, na=False)
+        ]
+else:
+    # Gas market specific date ranges
+    today = datetime.today()
+    current_year = today.year
+    
+    # Determine current gas year (Oct 1 - Sept 30)
+    if today.month >= 10:
+        current_gas_year = current_year
+        next_gas_year = current_year + 1
+    else:
+        current_gas_year = current_year - 1
+        next_gas_year = current_year
+    
+    # Gas seasons (industry standard)
+    winter_start = datetime(current_gas_year, 10, 1)
+    winter_end = datetime(current_gas_year + 1, 3, 31)
+    summer_start = datetime(current_gas_year + 1, 4, 1)
+    summer_end = datetime(current_gas_year + 1, 9, 30)
+    
+    # Generate gas market specific options
+    predefined_options = [
+        ("Today", today.strftime("%Y-%m-%d")),
+        ("Yesterday", (today - pd.Timedelta(days=1)).strftime("%Y-%m-%d")),
+        ("Current Gas Day", today.strftime("%Y-%m-%d")),
+        ("Next Gas Day", (today + pd.Timedelta(days=1)).strftime("%Y-%m-%d")),
+        ("Current Week", f"{(today - pd.Timedelta(days=today.weekday())).strftime('%Y-%m-%d')} to {today.strftime('%Y-%m-%d')}"),
+        ("Next Week", f"{(today + pd.Timedelta(days=(7-today.weekday()))).strftime('%Y-%m-%d')} to {(today + pd.Timedelta(days=(13-today.weekday()))).strftime('%Y-%m-%d')}"),
+        ("Current Month", f"{today.replace(day=1).strftime('%Y-%m-%d')} to {today.strftime('%Y-%m-%d')}"),
+        ("Next Month", f"{(today.replace(day=1) + pd.DateOffset(months=1)).strftime('%Y-%m-%d')} to {(today.replace(day=1) + pd.DateOffset(months=2) - pd.DateOffset(days=1)).strftime('%Y-%m-%d')}"),
+        ("Current Gas Winter", f"{winter_start.strftime('%Y-%m-%d')} to {winter_end.strftime('%Y-%m-%d')}"),
+        ("Current Gas Summer", f"{summer_start.strftime('%Y-%m-%d')} to {summer_end.strftime('%Y-%m-%d')}"),
+        *[(f"Gas Year {str(year)[-2:]} (GY{str(year)[-2:]})", f"GY{str(year)[-2:]}") 
+          for year in range(current_gas_year - 1, current_gas_year + 2)],
+        *[(f"Storage Year {str(year)[-2:]} (SY{str(year)[-2:]})", f"SY{str(year)[-2:]}") 
+          for year in range(current_gas_year - 1, current_gas_year + 2)],
+        *[(f"{month_name[:3]}{str(year)[-2:]}", f"{month_name[:3]}{str(year)[-2:]}") 
+          for year in [current_gas_year, current_gas_year + 1] 
+          for month_name in ["January", "February", "March", "April", "May", "June", 
+                            "July", "August", "September", "October", "November", "December"]],
+        *[(f"Q{q} {str(year)[-2:]}", f"{str(year)[-2:]}Q{q}") 
+          for year in [current_gas_year, current_gas_year + 1] 
+          for q in range(1, 5)],
+        ("Next 7 Gas Days", f"{today.strftime('%Y-%m-%d')} to {(today + pd.Timedelta(days=7)).strftime('%Y-%m-%d')}"),
+        ("Next 30 Gas Days", f"{today.strftime('%Y-%m-%d')} to {(today + pd.Timedelta(days=30)).strftime('%Y-%m-%d')}"),
+        ("Current Balance Period", ""),  # Will be handled separately
+        ("Next Balance Period", ""),     # Will be handled separately
     ]
+    
+    # Handle balance periods (typically months in gas trading)
+    current_balance_start = today.replace(day=1)
+    next_balance_start = (current_balance_start + pd.DateOffset(months=1)).replace(day=1)
+    
+    # Update the balance period options
+    predefined_options[predefined_options.index(("Current Balance Period", ""))] = (
+        "Current Balance Period",
+        f"{current_balance_start.strftime('%Y-%m-%d')} to "
+        f"{(current_balance_start + pd.DateOffset(months=1) - pd.DateOffset(days=1)).strftime('%Y-%m-%d')}"
+    )
+    predefined_options[predefined_options.index(("Next Balance Period", ""))] = (
+        "Next Balance Period",
+        f"{next_balance_start.strftime('%Y-%m-%d')} to "
+        f"{(next_balance_start + pd.DateOffset(months=1) - pd.DateOffset(days=1)).strftime('%Y-%m-%d')}"
+    )
+    
+    # Create dropdown with gas market labels
+    selected_range_label = st.sidebar.selectbox(
+        "Select Gas Period",
+        options=[opt[0] for opt in predefined_options],
+        key="selected_date_range"
+    )
+    
+    # Get the corresponding date string
+    selected_range = next(opt[1] for opt in predefined_options if opt[0] == selected_range_label)
+    
+    if selected_range:
+        # Handle different date formats
+        if " to " in selected_range:  # Date range
+            start_date, end_date = selected_range.split(" to ")
+            try:
+                start_date = pd.to_datetime(start_date).strftime("%Y-%m-%d")
+                end_date = pd.to_datetime(end_date).strftime("%Y-%m-%d")
+                
+                # Convert all dates in dataframe to datetime for comparison
+                filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
+                
+                # Filter between dates (for exact date ranges)
+                mask = (
+                    (filtered_df["Date_parsed"] >= pd.to_datetime(start_date)) & 
+                    (filtered_df["Date_parsed"] <= pd.to_datetime(end_date))
+                
+                # Also check for string matches (for gas period codes)
+                mask |= filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
+                
+                filtered_df = filtered_df[mask]
+                filtered_df = filtered_df.drop(columns=["Date_parsed"])
+            except:
+                # Fallback to string search if parsing fails
+                filtered_df = filtered_df[
+                    filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
+                ]
+        else:  # Single date or gas period code
+            filtered_df = filtered_df[
+                filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
+            ]
 
 # Universal Search Box
 unified_search = st.sidebar.text_input(
