@@ -217,57 +217,31 @@ else:
         next_gas_year = current_year
     
     # Gas seasons (industry standard)
-    winter_start = datetime(current_gas_year, 10, 1)
-    winter_end = datetime(current_gas_year + 1, 3, 31)
-    summer_start = datetime(current_gas_year + 1, 4, 1)
-    summer_end = datetime(current_gas_year + 1, 9, 30)
+    next_winter_start = datetime(next_gas_year, 10, 1)
+    next_winter_end = datetime(next_gas_year + 1, 3, 31)
+    next_summer_start = datetime(next_gas_year, 4, 1)
+    next_summer_end = datetime(next_gas_year, 9, 30)
     
-    # Generate gas market specific options
+    # Next month
+    next_month_start = (today.replace(day=1) + pd.DateOffset(months=1))
+    next_month_end = (next_month_start + pd.DateOffset(months=1) - pd.DateOffset(days=1))
+    
+    # Next quarter
+    current_quarter = (today.month - 1) // 3 + 1
+    next_quarter_start = (today.replace(month=current_quarter*3-2, day=1) + pd.DateOffset(months=3))
+    next_quarter_end = (next_quarter_start + pd.DateOffset(months=3) - pd.DateOffset(days=1))
+    
+    # Generate simplified gas market options
     predefined_options = [
-        ("Today", today.strftime("%Y-%m-%d")),
-        ("Yesterday", (today - pd.Timedelta(days=1)).strftime("%Y-%m-%d")),
-        ("Current Gas Day", today.strftime("%Y-%m-%d")),
-        ("Next Gas Day", (today + pd.Timedelta(days=1)).strftime("%Y-%m-%d")),
-        ("Current Week", f"{(today - pd.Timedelta(days=today.weekday())).strftime('%Y-%m-%d')} to {today.strftime('%Y-%m-%d')}"),
-        ("Next Week", f"{(today + pd.Timedelta(days=(7-today.weekday()))).strftime('%Y-%m-%d')} to {(today + pd.Timedelta(days=(13-today.weekday()))).strftime('%Y-%m-%d')}"),
-        ("Current Month", f"{today.replace(day=1).strftime('%Y-%m-%d')} to {today.strftime('%Y-%m-%d')}"),
-        ("Next Month", f"{(today.replace(day=1) + pd.DateOffset(months=1)).strftime('%Y-%m-%d')} to {(today.replace(day=1) + pd.DateOffset(months=2) - pd.DateOffset(days=1)).strftime('%Y-%m-%d')}"),
-        ("Current Gas Winter", f"{winter_start.strftime('%Y-%m-%d')} to {winter_end.strftime('%Y-%m-%d')}"),
-        ("Current Gas Summer", f"{summer_start.strftime('%Y-%m-%d')} to {summer_end.strftime('%Y-%m-%d')}"),
+        ("Next Month", f"{next_month_start.strftime('%Y-%m-%d')} to {next_month_end.strftime('%Y-%m-%d')}"),
+        ("Next Quarter", f"{next_quarter_start.strftime('%Y-%m-%d')} to {next_quarter_end.strftime('%Y-%m-%d')}"),
+        ("Next Gas Winter", f"{next_winter_start.strftime('%Y-%m-%d')} to {next_winter_end.strftime('%Y-%m-%d')}"),
+        ("Next Gas Summer", f"{next_summer_start.strftime('%Y-%m-%d')} to {next_summer_end.strftime('%Y-%m-%d')}"),
         *[(f"Gas Year {str(year)[-2:]} (GY{str(year)[-2:]})", f"GY{str(year)[-2:]}") 
-          for year in range(current_gas_year - 1, current_gas_year + 2)],
-        *[(f"Storage Year {str(year)[-2:]} (SY{str(year)[-2:]})", f"SY{str(year)[-2:]}") 
-          for year in range(current_gas_year - 1, current_gas_year + 2)],
-        *[(f"{month_name[:3]}{str(year)[-2:]}", f"{month_name[:3]}{str(year)[-2:]}") 
-          for year in [current_gas_year, current_gas_year + 1] 
-          for month_name in ["January", "February", "March", "April", "May", "June", 
-                            "July", "August", "September", "October", "November", "December"]],
-        *[(f"Q{q} {str(year)[-2:]}", f"{str(year)[-2:]}Q{q}") 
-          for year in [current_gas_year, current_gas_year + 1] 
-          for q in range(1, 5)],
-        ("Next 7 Gas Days", f"{today.strftime('%Y-%m-%d')} to {(today + pd.Timedelta(days=7)).strftime('%Y-%m-%d')}"),
-        ("Next 30 Gas Days", f"{today.strftime('%Y-%m-%d')} to {(today + pd.Timedelta(days=30)).strftime('%Y-%m-%d')}"),
-        ("Current Balance Period", ""),  # Will be handled separately
-        ("Next Balance Period", ""),     # Will be handled separately
+          for year in range(current_gas_year, current_gas_year + 3)]
     ]
     
-    # Handle balance periods (typically months in gas trading)
-    current_balance_start = today.replace(day=1)
-    next_balance_start = (current_balance_start + pd.DateOffset(months=1)).replace(day=1)
-    
-    # Update the balance period options
-    predefined_options[predefined_options.index(("Current Balance Period", ""))] = (
-        "Current Balance Period",
-        f"{current_balance_start.strftime('%Y-%m-%d')} to "
-        f"{(current_balance_start + pd.DateOffset(months=1) - pd.DateOffset(days=1)).strftime('%Y-%m-%d')}"
-    )
-    predefined_options[predefined_options.index(("Next Balance Period", ""))] = (
-        "Next Balance Period",
-        f"{next_balance_start.strftime('%Y-%m-%d')} to "
-        f"{(next_balance_start + pd.DateOffset(months=1) - pd.DateOffset(days=1)).strftime('%Y-%m-%d')}"
-    )
-    
-    # Create dropdown with gas market labels
+    # Create dropdown with simplified gas market labels
     selected_range_label = st.sidebar.selectbox(
         "Select Gas Period",
         options=[opt[0] for opt in predefined_options],
@@ -304,10 +278,11 @@ else:
                 filtered_df = filtered_df[
                     filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
                 ]
-        else:  # Single date or gas period code
+        else:  # Gas period code
             filtered_df = filtered_df[
                 filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
             ]
+
 
 # Universal Search Box
 unified_search = st.sidebar.text_input(
