@@ -187,14 +187,103 @@ if st.session_state.selected_tags:
 # --- Time Horizon Filter ---
 st.sidebar.header("📅 Date Filter")
 
-def get_period_dates(period_code):
-    """Return start and end dates for different period codes with priority flag"""
+def get_related_periods(period_code):
+    """Return all related period codes for a given search term"""
     period_code = period_code.upper().strip()
-    today = datetime.today()
-    current_year = today.year
+    related_periods = set()
     
-    # Handle month codes (JAN24, FEB24, etc.)
-    if len(period_code) in [4,5] and period_code[:3].isalpha():
+    # Handle Gas Year (GY25)
+    if period_code.startswith('GY') and len(period_code) in [4,5]:
+        try:
+            year = int(period_code[2:]) if len(period_code[2:]) == 2 else int(period_code[2:])
+            # Add all related periods for this gas year
+            related_periods.update([
+                f"GY{year}",
+                f"{year}WIN",  # Winter of starting year
+                f"{year+1}SUM",  # Summer of next year
+                f"{year}Q4",     # Q4 of starting year
+                f"{year+1}Q1",   # Q1 of next year
+                f"{year+1}Q2",   # Q2 of next year
+                f"{year+1}Q3",   # Q3 of next year
+                *[f"{month.upper()}{year}" for month in ["OCT", "NOV", "DEC"]],  # Months in Q4
+                *[f"{month.upper()}{year+1}" for month in ["JAN", "FEB", "MAR"]], # Months in Q1
+                *[f"{month.upper()}{year+1}" for month in ["APR", "MAY", "JUN"]], # Months in Q2
+                *[f"{month.upper()}{year+1}" for month in ["JUL", "AUG", "SEP"]]  # Months in Q3
+            ])
+            return list(related_periods)
+        except:
+            pass
+    
+    # Handle Winter (25WIN)
+    if period_code.endswith('WIN') and len(period_code) in [5,6]:
+        try:
+            year = int(period_code[:2]) if len(period_code[:-3]) == 2 else int(period_code[:-3])
+            related_periods.update([
+                f"GY{year}",     # Gas year this winter belongs to
+                f"{year}WIN",     # The winter itself
+                f"{year}Q4",      # Q4 of same year
+                f"{year+1}Q1",    # Q1 of next year
+                *[f"{month.upper()}{year}" for month in ["OCT", "NOV", "DEC"]],  # Months in Q4
+                *[f"{month.upper()}{year+1}" for month in ["JAN", "FEB", "MAR"]] # Months in Q1
+            ])
+            return list(related_periods)
+        except:
+            pass
+    
+    # Handle Summer (25SUM)
+    if period_code.endswith('SUM') and len(period_code) in [5,6]:
+        try:
+            year = int(period_code[:2]) if len(period_code[:-3]) == 2 else int(period_code[:-3])
+            related_periods.update([
+                f"GY{year}",     # Gas year this summer belongs to
+                f"{year}SUM",     # The summer itself
+                f"{year}Q2",      # Q2 of same year
+                f"{year}Q3",      # Q3 of same year
+                *[f"{month.upper()}{year}" for month in ["APR", "MAY", "JUN"]],  # Months in Q2
+                *[f"{month.upper()}{year}" for month in ["JUL", "AUG", "SEP"]]   # Months in Q3
+            ])
+            return list(related_periods)
+        except:
+            pass
+    
+    # Handle Quarters (25Q4)
+    if 'Q' in period_code and len(period_code) in [4,5,6]:
+        try:
+            # Parse different quarter formats
+            clean_code = period_code.replace('-','').replace(' ','')
+            if clean_code.startswith('Q'):
+                quarter = int(clean_code[1])
+                year = int(clean_code[2:]) if len(clean_code[2:]) == 2 else int(clean_code[2:])
+            else:
+                year_part = clean_code.split('Q')[0]
+                year = int(year_part) if len(year_part) == 2 else int(year_part)
+                quarter = int(clean_code.split('Q')[1][0])
+            
+            related_periods.add(f"{year}Q{quarter}")
+            
+            # Add months for this quarter
+            if quarter == 1:
+                related_periods.update([f"{month.upper()}{year}" for month in ["JAN", "FEB", "MAR"]])
+            elif quarter == 2:
+                related_periods.update([f"{month.upper()}{year}" for month in ["APR", "MAY", "JUN"]])
+            elif quarter == 3:
+                related_periods.update([f"{month.upper()}{year}" for month in ["JUL", "AUG", "SEP"]])
+            elif quarter == 4:
+                related_periods.update([f"{month.upper()}{year}" for month in ["OCT", "NOV", "DEC"]])
+            
+            # Add related GY if Q4 or Q1
+            if quarter == 4:
+                related_periods.add(f"GY{year}")
+                related_periods.add(f"{year}WIN")
+            elif quarter == 1:
+                related_periods.add(f"GY{year-1}")
+            
+            return list(related_periods)
+        except:
+            pass
+    
+    # Handle Months (OCT25)
+    if len(period_code) in [5,6] and period_code[:3].isalpha():
         month_map = {
             'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
             'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
@@ -203,129 +292,60 @@ def get_period_dates(period_code):
         year_str = period_code[3:]
         if month_str in month_map:
             try:
-                year = 2000 + int(year_str) if len(year_str) == 2 else int(year_str)
-                start_date = datetime(year, month_map[month_str], 1)
-                end_date = (start_date + pd.DateOffset(months=1)) - pd.DateOffset(days=1)
-                return start_date, end_date, period_code, False
+                year = int(year_str) if len(year_str) == 2 else int(year_str)
+                related_periods.add(f"{month_str}{year}")
+                
+                # Add quarter
+                quarter = (month_map[month_str] - 1) // 3 + 1
+                related_periods.add(f"{year}Q{quarter}")
+                
+                # Add season
+                if month_str in ['OCT', 'NOV', 'DEC', 'JAN', 'FEB', 'MAR']:
+                    related_periods.add(f"{year}WIN") if month_map[month_str] >= 10 else related_periods.add(f"{year+1}WIN")
+                else:
+                    related_periods.add(f"{year}SUM")
+                
+                # Add gas year if Oct-Dec
+                if month_str in ['OCT', 'NOV', 'DEC']:
+                    related_periods.add(f"GY{year}")
+                elif month_str in ['JAN', 'FEB', 'MAR']:
+                    related_periods.add(f"GY{year-1}")
+                
+                return list(related_periods)
             except:
                 pass
     
-    # Handle quarters (24Q1, 2025Q4, Q4-25, etc.)
-    if 'Q' in period_code:
-        try:
-            # Handle different quarter formats
-            clean_code = period_code.replace('-','').replace(' ','')
-            if clean_code.startswith('Q'):
-                quarter = int(clean_code[1])
-                year = 2000 + int(clean_code[2:4]) if len(clean_code[2:4]) == 2 else int(clean_code[2:6])
-            else:
-                year_part = clean_code.split('Q')[0]
-                year = 2000 + int(year_part) if len(year_part) == 2 else int(year_part)
-                quarter = int(clean_code.split('Q')[1][0])
-            
-            start_month = (quarter - 1) * 3 + 1
-            start_date = datetime(year, start_month, 1)
-            end_date = (start_date + pd.DateOffset(months=3)) - pd.DateOffset(days=1)
-            return start_date, end_date, f"{str(year)[-2:]}Q{quarter}", True
-        except:
-            pass
-    
-    # Handle gas years (GY24)
-    if period_code.startswith('GY'):
-        try:
-            year = 2000 + int(period_code[2:]) if len(period_code[2:]) == 2 else int(period_code[2:])
-            start_date = datetime(year, 10, 1)
-            end_date = datetime(year+1, 9, 30)
-            return start_date, end_date, f"GY{str(year)[-2:]}", True
-        except:
-            pass
-    
-    # Handle partial matches (like "Q4" or "2025")
-    if period_code.isdigit() and len(period_code) in [2,4]:  # Year search
-        year = 2000 + int(period_code) if len(period_code) == 2 else int(period_code)
-        return datetime(year, 1, 1), datetime(year, 12, 31), str(year), False
-    
-    if period_code.startswith('Q'):
-        try:
-            quarter = int(period_code[1])
-            return None, None, f"Q{quarter}", True  # Flag for partial quarter match
-        except:
-            pass
-    
-    return None, None, None, False
-
-# Generate all possible period codes
-today = datetime.today()
-current_year = today.year
-predefined_options = sorted([
-    f"{month.upper()[:3]}{str(year)[-2:]}" for year in range(current_year-1, current_year + 3) 
-    for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-] + [
-    f"{str(year)[-2:]}Q{q}" for year in range(current_year-1, current_year + 3) for q in range(1, 5)
-] + [
-    f"GY{str(year)[-2:]}" for year in range(current_year-1, current_year + 3)
-])
+    return [period_code]  # Default to search for exactly what was entered
 
 search_input = st.sidebar.text_input(
-    "Search Date/Period",
+    "Search Gas Period",
     key="time_horizon_input",
-    help="Search for dates (2024-03-15), periods (AUG24, 25Q4), or years (2025)"
+    help="Search for gas periods (GY25, 25WIN, 25Q4, OCT25) to see all related periods"
 )
 
-selected_period = st.sidebar.selectbox(
-    "Or select common period:",
-    ["Select..."] + predefined_options,
-    key="selected_period"
-)
-
-# Use either the typed input or selected dropdown
-search_term = search_input if search_input else (selected_period if selected_period != "Select..." else "")
-
-if search_term:
-    # First look for exact matches (prioritized)
-    exact_matches = filtered_df[
-        filtered_df["Date"].astype(str).str.contains(f"\\b{search_term}\\b", case=False, regex=True, na=False)
+if search_input:
+    related_periods = get_related_periods(search_input)
+    
+    # Create regex pattern to match any of the related periods
+    pattern = "|".join([re.escape(p) for p in related_periods])
+    
+    # Find matches in the dataframe
+    filtered_df = filtered_df[
+        filtered_df["Date"].astype(str).str.contains(
+            pattern, 
+            case=False, 
+            regex=True, 
+            na=False
+        )
     ]
     
-    # Then try to parse as date/period
-    try:
-        if " to " in search_term:  # Date range
-            start_date, end_date = [pd.to_datetime(d.strip()) for d in search_term.split(" to ")]
-            filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
-            range_matches = filtered_df[
-                (filtered_df["Date_parsed"] >= start_date) & 
-                (filtered_df["Date_parsed"] <= end_date)
-            ]
-        else:  # Single date or period code
-            start_date, end_date, norm_period_code, is_period = get_period_dates(search_term)
-            
-            if start_date and end_date:  # Valid date range
-                filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
-                range_matches = filtered_df[
-                    (filtered_df["Date_parsed"] >= start_date) & 
-                    (filtered_df["Date_parsed"] <= end_date)
-                ]
-            elif norm_period_code and is_period:  # Partial period match (like "Q4")
-                range_matches = filtered_df[
-                    filtered_df["Date"].astype(str).str.contains(norm_period_code, case=False, na=False)
-                ]
-            else:  # Try as single date
-                search_date = pd.to_datetime(search_term)
-                filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
-                range_matches = filtered_df[filtered_df["Date_parsed"] == search_date]
-                
-        # Combine results (exact matches first)
-        filtered_df = pd.concat([exact_matches, range_matches]).drop_duplicates()
-        
-    except:
-        # Fallback to simple text search if parsing fails
-        filtered_df = filtered_df[
-            filtered_df["Date"].astype(str).str.contains(search_term.strip(), case=False, na=False)
-        ]
-    
-    # Clean up
-    if 'Date_parsed' in filtered_df.columns:
-        filtered_df = filtered_df.drop(columns=["Date_parsed"])
+    # Display which periods are being included
+    with st.sidebar.expander("Included Periods"):
+        st.write(f"Searching for: {search_input.upper()}")
+        st.write("Includes:")
+        cols = st.columns(3)
+        for i, period in enumerate(sorted(related_periods)):
+            cols[i%3].write(f"- {period}")
 
 # ---------------------------------------------------
 # Universal Search Box
