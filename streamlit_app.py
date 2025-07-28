@@ -236,29 +236,15 @@ def get_period_dates(period_code):
             return start_date, end_date, period_code
         except:
             pass
+    return None, None, None
 
-# Now create the UI components that use predefined_options
+# Remove the duplicate text_input widget - keep only one instance
 search_input = st.sidebar.text_input(
     "Search Date/Period",
     key="time_horizon_input",
     help="Search for dates (2024-03-15) or gas periods (AUG24, 24Q3, SUM24, GY24)"
 )
 
-selected_period = st.sidebar.selectbox(
-    "Or select common period:",
-    ["Select..."] + predefined_options,
-    key="selected_period"
-)
-
-
-# Combined search input with dropdown suggestions
-search_input = st.sidebar.text_input(
-    "Search Date/Period",
-    key="time_horizon_input",
-    help="Search for dates (2024-03-15) or gas periods (AUG24, 24Q3, SUM24, GY24)"
-)
-
-# Also show dropdown for quick selection
 selected_period = st.sidebar.selectbox(
     "Or select common period:",
     ["Select..."] + predefined_options,
