@@ -187,6 +187,11 @@ if st.session_state.selected_tags:
 # --- Time Horizon Filter ---
 st.sidebar.header("📅 Date Filter")
 
+month_map = {
+        'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+        'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
+    }
+
 def get_related_periods(period_code):
     """Return all related period codes for a given search term with proper gas year associations"""
     if not period_code or not isinstance(period_code, (str, int, float)):
@@ -194,10 +199,7 @@ def get_related_periods(period_code):
     
     period_code = str(period_code).upper().strip()
     related_periods = set()
-    month_map = {
-        'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
-        'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
-    }
+    
     
     try:
         # Handle Gas Year (GY25 or GY2025)
