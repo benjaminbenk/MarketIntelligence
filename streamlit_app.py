@@ -327,13 +327,20 @@ search_input = st.sidebar.text_input(
 if search_input:
     related_periods = get_related_periods(search_input)
     
-    if not related_periods:
-        st.sidebar.warning("No valid periods found for this search")
-    else:
-        # Create regex pattern with word boundaries for exact matching
-        pattern = r"\b(" + "|".join([re.escape(p) for p in related_periods]) + r")\b"
-        
+    # Filter out any None or non-string values and ensure all periods are valid strings
+    valid_periods = []
+    for p in related_periods:
         try:
+            if p is not None and str(p).strip():
+                valid_periods.append(str(p).strip())
+        except:
+            continue
+    
+    if valid_periods:
+        try:
+            # Create regex pattern with word boundaries for exact matching
+            pattern = r"\b(" + "|".join([re.escape(p) for p in valid_periods]) + r")\b"
+            
             filtered_df = filtered_df[
                 filtered_df["Date"].astype(str).str.contains(
                     pattern,
@@ -350,10 +357,10 @@ if search_input:
                 
                 # Group by period type for better display
                 periods_by_type = {
-                    "Gas Years": [p for p in related_periods if p.startswith("GY")],
-                    "Seasons": [p for p in related_periods if p.endswith(("WIN", "SUM"))],
-                    "Quarters": [p for p in related_periods if "Q" in p and not p.startswith("GY")],
-                    "Months": [p for p in related_periods if p[:3] in month_map]
+                    "Gas Years": [p for p in valid_periods if p.startswith("GY")],
+                    "Seasons": [p for p in valid_periods if p.endswith(("WIN", "SUM"))],
+                    "Quarters": [p for p in valid_periods if "Q" in p and not p.startswith("GY")],
+                    "Months": [p for p in valid_periods if p[:3] in month_map]
                 }
                 
                 for period_type, periods in periods_by_type.items():
@@ -363,11 +370,12 @@ if search_input:
                         for i, period in enumerate(sorted(periods)):
                             cols[i%3].write(f"- {period}")
                 
-                st.write(f"*Total: {len(related_periods)} related periods*")
+                st.write(f"*Total: {len(valid_periods)} related periods*")
                 
         except Exception as e:
             st.sidebar.error(f"Error filtering data: {str(e)}")
-
+    else:
+        st.sidebar.warning("No valid periods found for this search")
 # ---------------------------------------------------
 # Universal Search Box
 unified_search = st.sidebar.text_input(
