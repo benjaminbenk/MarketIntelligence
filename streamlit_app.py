@@ -183,7 +183,190 @@ if st.session_state.selected_tags:
         filtered_df["Tags"].apply(lambda x: any(tag in x for tag in st.session_state.selected_tags))
     ]
 # ---------------------------------------------------
+# --- Time Horizon Filter ---
+st.sidebar.header("📅 Date Filter")
 
+def get_related_periods(period_code):
+    """Return all related period codes for a given search term with proper gas year associations"""
+    if not period_code or not isinstance(period_code, (str, int, float)):
+        return []
+    
+    period_code = str(period_code).upper().strip()
+    related_periods = set()
+    month_map = {
+        'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+        'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
+    }
+    
+    try:
+        # Handle Gas Year (GY25 or GY2025)
+        if period_code.startswith('GY'):
+            year_str = period_code[2:]
+            year = int(year_str)
+            base_year = 2000 + year if year < 100 else year
+            
+            related_periods.update([
+                f"GY{year}",
+                f"{base_year-1}WIN",  # Winter of previous year
+                f"{base_year}SUM",    # Summer of current year
+                f"{base_year-1}Q4",   # Q4 of previous year
+                f"{base_year}Q1",     # Q1 of current year
+                f"{base_year}Q2",     # Q2 of current year
+                f"{base_year}Q3",     # Q3 of current year
+                *[f"{month}{base_year-1}" for month in ["OCT", "NOV", "DEC"]],
+                *[f"{month}{base_year}" for month in ["JAN", "FEB", "MAR"]],
+                *[f"{month}{base_year}" for month in ["APR", "MAY", "JUN"]],
+                *[f"{month}{base_year}" for month in ["JUL", "AUG", "SEP"]]
+            ])
+            return sorted(related_periods)
+        
+        # Handle Winter (25WIN, 2025WIN)
+        if period_code.endswith('WIN'):
+            year_str = period_code[:-3]
+            year = int(year_str)
+            base_year = 2000 + year if year < 100 else year
+            
+            related_periods.update([
+                f"GY{base_year+1}",   # Gas year starts Oct this year
+                f"{base_year}WIN",
+                f"{base_year}Q4",
+                f"{base_year+1}Q1",
+                *[f"{month}{base_year}" for month in ["OCT", "NOV", "DEC"]],
+                *[f"{month}{base_year+1}" for month in ["JAN", "FEB", "MAR"]]
+            ])
+            return sorted(related_periods)
+        
+        # Handle Summer (25SUM, 2025SUM)
+        if period_code.endswith('SUM'):
+            year_str = period_code[:-3]
+            year = int(year_str)
+            base_year = 2000 + year if year < 100 else year
+            
+            related_periods.update([
+                f"GY{base_year}",    # Summer belongs to same-numbered GY
+                f"{base_year}SUM",
+                f"{base_year}Q2",
+                f"{base_year}Q3",
+                *[f"{month}{base_year}" for month in ["APR", "MAY", "JUN"]],
+                *[f"{month}{base_year}" for month in ["JUL", "AUG", "SEP"]]
+            ])
+            return sorted(related_periods)
+        
+        # Handle Quarters (25Q4, Q4-25, 2025Q4)
+        if 'Q' in period_code:
+            clean_code = period_code.replace('-','').replace(' ','')
+            
+            if clean_code.startswith('Q'):
+                quarter = int(clean_code[1])
+                year_str = clean_code[2:]
+            else:
+                parts = clean_code.split('Q')
+                year_str = parts[0]
+                quarter = int(parts[1][0])
+            
+            year = int(year_str)
+            base_year = 2000 + year if year < 100 else year
+            
+            quarter_str = f"{base_year}Q{quarter}"
+            related_periods.add(quarter_str)
+            
+            # Add months and related periods
+            if quarter == 1:
+                related_periods.update([f"{month}{base_year}" for month in ["JAN", "FEB", "MAR"]])
+                related_periods.add(f"GY{base_year}")
+            elif quarter == 2:
+                related_periods.update([f"{month}{base_year}" for month in ["APR", "MAY", "JUN"]])
+                related_periods.add(f"GY{base_year}")
+            elif quarter == 3:
+                related_periods.update([f"{month}{base_year}" for month in ["JUL", "AUG", "SEP"]])
+                related_periods.add(f"GY{base_year}")
+            elif quarter == 4:
+                related_periods.update([f"{month}{base_year}" for month in ["OCT", "NOV", "DEC"]])
+                related_periods.add(f"GY{base_year+1}")
+                related_periods.add(f"{base_year}WIN")
+            
+            return sorted(related_periods)
+        
+        # Handle Months (OCT25, OCT2025)
+        if period_code[:3] in month_map and period_code[3:].strip().isdigit():
+            month_str = period_code[:3]
+            year_str = period_code[3:].strip()
+            year = int(year_str)
+            base_year = 2000 + year if year < 100 else year
+            
+            month_period = f"{month_str}{base_year}"
+            related_periods.add(month_period)
+            
+            # Add quarter and related periods
+            quarter = (month_map[month_str] - 1) // 3 + 1
+            related_periods.add(f"{base_year}Q{quarter}")
+            
+            if month_str in ['OCT', 'NOV', 'DEC']:
+                related_periods.add(f"GY{base_year+1}")
+                related_periods.add(f"{base_year}WIN")
+            elif month_str in ['JAN', 'FEB', 'MAR']:
+                related_periods.add(f"GY{base_year}")
+                related_periods.add(f"{base_year-1}WIN")
+            else:  # Summer months
+                related_periods.add(f"GY{base_year}")
+                related_periods.add(f"{base_year}SUM")
+            
+            return sorted(related_periods)
+        
+    except (ValueError, IndexError, KeyError):
+        pass
+    
+    return [period_code]  # Fallback to exact match
+
+search_input = st.sidebar.text_input(
+    "Search Gas Period",
+    key="time_horizon_input",
+    help="Search for gas periods (GY25, 25WIN, 25Q4, OCT25) to see all related periods"
+)
+
+if search_input:
+    related_periods = get_related_periods(search_input)
+    
+    if not related_periods:
+        st.sidebar.warning("No valid periods found for this search")
+    else:
+        # Create regex pattern with word boundaries for exact matching
+        pattern = r"\b(" + "|".join([re.escape(p) for p in related_periods]) + r")\b"
+        
+        try:
+            filtered_df = filtered_df[
+                filtered_df["Date"].astype(str).str.contains(
+                    pattern,
+                    case=False,
+                    regex=True,
+                    na=False
+                )
+            ]
+            
+            # Display included periods
+            with st.sidebar.expander("Included Periods", expanded=True):
+                st.write(f"Search term: `{search_input.upper()}`")
+                st.write("**Matching periods:**")
+                
+                # Group by period type for better display
+                periods_by_type = {
+                    "Gas Years": [p for p in related_periods if p.startswith("GY")],
+                    "Seasons": [p for p in related_periods if p.endswith(("WIN", "SUM"))],
+                    "Quarters": [p for p in related_periods if "Q" in p and not p.startswith("GY")],
+                    "Months": [p for p in related_periods if p[:3] in month_map]
+                }
+                
+                for period_type, periods in periods_by_type.items():
+                    if periods:
+                        st.write(f"**{period_type}**")
+                        cols = st.columns(3)
+                        for i, period in enumerate(sorted(periods)):
+                            cols[i%3].write(f"- {period}")
+                
+                st.write(f"*Total: {len(related_periods)} related periods*")
+                
+        except Exception as e:
+            st.sidebar.error(f"Error filtering data: {str(e)}")
 
 # ---------------------------------------------------
 # Universal Search Box
