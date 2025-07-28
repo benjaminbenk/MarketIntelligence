@@ -186,103 +186,154 @@ if st.session_state.selected_tags:
 # --- Time Horizon Filter ---
 st.sidebar.header("📅 Date Filter")
 
-# Date search mode selection
-date_search_mode = st.sidebar.radio(
-    "Date Search Mode",
-    ["Text Search", "Gas Market Periods"],
-    key="date_search_mode"
-)
-
-if date_search_mode == "Text Search":
-    time_horizon_input = st.sidebar.text_input(
-        "Search Date (exact or partial match)",
-        key="time_horizon_input",
-        help="Search for dates like '2024-03-15' or gas periods like 'GY24'"
-    )
-    if time_horizon_input:
-        filtered_df = filtered_df[
-            filtered_df["Date"].astype(str).str.contains(time_horizon_input.strip(), case=False, na=False)
-        ]
-else:
-    # Gas market specific date ranges
+def get_period_dates(period_code):
+    """Return start and end dates for different period codes"""
     today = datetime.today()
     current_year = today.year
     
-    # Determine current gas year (Oct 1 - Sept 30)
-    if today.month >= 10:
-        current_gas_year = current_year
-        next_gas_year = current_year + 1
-    else:
-        current_gas_year = current_year - 1
-        next_gas_year = current_year
+    # Handle month codes (JAN24, FEB24, etc.)
+    if len(period_code) == 5 and period_code[:3].isalpha():
+        month_map = {
+            'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+            'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
+        }
+        month = month_map.get(period_code[:3].upper())
+        year = 2000 + int(period_code[3:])  # Convert 24 to 2024
+        if month and year:
+            start_date = datetime(year, month, 1)
+            end_date = (start_date + pd.DateOffset(months=1)) - pd.DateOffset(days=1)
+            return start_date, end_date
     
-    # Gas seasons (industry standard)
-    next_winter_start = datetime(next_gas_year, 10, 1)
-    next_winter_end = datetime(next_gas_year + 1, 3, 31)
-    next_summer_start = datetime(next_gas_year, 4, 1)
-    next_summer_end = datetime(next_gas_year, 9, 30)
+    # Handle quarters (24Q1, 24Q2, etc.)
+    if len(period_code) == 4 and 'Q' in period_code:
+        try:
+            year = 2000 + int(period_code[:2])
+            quarter = int(period_code[-1])
+            start_month = (quarter - 1) * 3 + 1
+            start_date = datetime(year, start_month, 1)
+            end_date = (start_date + pd.DateOffset(months=3)) - pd.DateOffset(days=1)
+            return start_date, end_date
+        except:
+            pass
     
-    # Next month
-    next_month_start = (today.replace(day=1) + pd.DateOffset(months=1))
-    next_month_end = (next_month_start + pd.DateOffset(months=1) - pd.DateOffset(days=1))
+    # Handle seasons (24WIN, 24SUM)
+    if len(period_code) == 5 and period_code[2:].isalpha():
+        try:
+            year = 2000 + int(period_code[:2])
+            season = period_code[2:].upper()
+            if season == 'WIN':
+                start_date = datetime(year, 10, 1)  # WIN24 starts Oct 2024
+                end_date = datetime(year+1, 3, 31)  # Ends Mar 2025
+            elif season == 'SUM':
+                start_date = datetime(year, 4, 1)    # SUM24 starts Apr 2024
+                end_date = datetime(year, 9, 30)     # Ends Sep 2024
+            return start_date, end_date
+        except:
+            pass
     
-    # Next quarter
-    current_quarter = (today.month - 1) // 3 + 1
-    next_quarter_start = (today.replace(month=current_quarter*3-2, day=1) + pd.DateOffset(months=3))
-    next_quarter_end = (next_quarter_start + pd.DateOffset(months=3) - pd.DateOffset(days=1))
+    # Handle calendar years (CAL24)
+    if len(period_code) == 5 and period_code.startswith('CAL'):
+        try:
+            year = 2000 + int(period_code[3:])
+            start_date = datetime(year, 1, 1)
+            end_date = datetime(year, 12, 31)
+            return start_date, end_date
+        except:
+            pass
     
-    # Generate simplified gas market options
-    predefined_options = [
-        ("Next Month", f"{next_month_start.strftime('%Y-%m-%d')} to {next_month_end.strftime('%Y-%m-%d')}"),
-        ("Next Quarter", f"{next_quarter_start.strftime('%Y-%m-%d')} to {next_quarter_end.strftime('%Y-%m-%d')}"),
-        ("Next Gas Winter", f"{next_winter_start.strftime('%Y-%m-%d')} to {next_winter_end.strftime('%Y-%m-%d')}"),
-        ("Next Gas Summer", f"{next_summer_start.strftime('%Y-%m-%d')} to {next_summer_end.strftime('%Y-%m-%d')}"),
-        *[(f"Gas Year {str(year)[-2:]} (GY{str(year)[-2:]})", f"GY{str(year)[-2:]}") 
-          for year in range(current_gas_year, current_gas_year + 3)]
-    ]
+    # Handle gas years (GY24)
+    if len(period_code) == 4 and period_code.startswith('GY'):
+        try:
+            year = 2000 + int(period_code[2:])
+            start_date = datetime(year, 10, 1)    # GY24 starts Oct 2024
+            end_date = datetime(year+1, 9, 30)   # Ends Sep 2025
+            return start_date, end_date
+        except:
+            pass
     
-    # Create dropdown with simplified gas market labels
-    selected_range_label = st.sidebar.selectbox(
-        "Select Gas Period",
-        options=[opt[0] for opt in predefined_options],
-        key="selected_date_range"
-    )
+    # Handle storage years (SY24)
+    if len(period_code) == 4 and period_code.startswith('SY'):
+        try:
+            year = 2000 + int(period_code[2:])
+            start_date = datetime(year, 4, 1)     # SY24 starts Apr 2024
+            end_date = datetime(year+1, 3, 31)    # Ends Mar 2025
+            return start_date, end_date
+        except:
+            pass
     
-    # Get the corresponding date string
-    selected_range = next(opt[1] for opt in predefined_options if opt[0] == selected_range_label)
-    
-    if selected_range:
-        # Handle different date formats
-        if " to " in selected_range:  # Date range
-            start_date, end_date = selected_range.split(" to ")
-            try:
-                start_date = pd.to_datetime(start_date).strftime("%Y-%m-%d")
-                end_date = pd.to_datetime(end_date).strftime("%Y-%m-%d")
-                
-                # Convert all dates in dataframe to datetime for comparison
-                filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
-                
-                # Filter between dates (for exact date ranges)
-                mask = (
-                    (filtered_df["Date_parsed"] >= pd.to_datetime(start_date)) & 
-                    (filtered_df["Date_parsed"] <= pd.to_datetime(end_date))
-                )
-                
-                # Also check for string matches (for gas period codes)
-                mask = mask | filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
-                
-                filtered_df = filtered_df[mask]
-                filtered_df = filtered_df.drop(columns=["Date_parsed"])
-            except:
-                # Fallback to string search if parsing fails
-                filtered_df = filtered_df[
-                    filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
-                ]
-        else:  # Gas period code
-            filtered_df = filtered_df[
-                filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
-            ]
+    return None, None
 
+# Generate all possible period codes
+today = datetime.today()
+current_year = today.year
+predefined_options = sorted([
+    f"{month.upper()[:3]}{str(year)[-2:]}" for year in range(current_year, current_year + 3) 
+    for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+] + [
+    f"{str(year)[-2:]}Q{q}" for year in range(current_year, current_year + 3) for q in range(1, 5)
+] + [
+    f"{str(year)[-2:]}WIN" for year in range(current_year, current_year + 3)
+] + [
+    f"{str(year)[-2:]}SUM" for year in range(current_year, current_year + 3)
+] + [
+    f"CAL{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+] + [
+    f"GY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+] + [
+    f"SY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+])
+
+# Combined search input with dropdown suggestions
+search_input = st.sidebar.text_input(
+    "Search Date/Period",
+    key="time_horizon_input",
+    help="Search for dates (2024-03-15) or gas periods (AUG24, 24Q3, SUM24, GY24)"
+)
+
+# Also show dropdown for quick selection
+selected_period = st.sidebar.selectbox(
+    "Or select common period:",
+    ["Select..."] + predefined_options,
+    key="selected_period"
+)
+
+# Use either the typed input or selected dropdown
+search_term = search_input if search_input else (selected_period if selected_period != "Select..." else "")
+
+if search_term:
+    # First try to parse as a specific date or date range
+    try:
+        if " to " in search_term:  # Date range
+            start_date, end_date = [pd.to_datetime(d.strip()) for d in search_term.split(" to ")]
+            filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
+            mask = (
+                (filtered_df["Date_parsed"] >= start_date) & 
+                (filtered_df["Date_parsed"] <= end_date))
+            filtered_df = filtered_df[mask]
+            filtered_df = filtered_df.drop(columns=["Date_parsed"])
+        else:  # Single date
+            search_date = pd.to_datetime(search_term)
+            filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
+            mask = (filtered_df["Date_parsed"] == search_date)
+            filtered_df = filtered_df[mask]
+            filtered_df = filtered_df.drop(columns=["Date_parsed"])
+    except:
+        # If not a date, try to parse as a period code
+        start_date, end_date = get_period_dates(search_term.upper())
+        if start_date and end_date:
+            filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
+            mask = (
+                (filtered_df["Date_parsed"] >= start_date) & 
+                (filtered_df["Date_parsed"] <= end_date))
+            # Also include exact matches to the period code
+            mask = mask | filtered_df["Date"].astype(str).str.contains(search_term.upper(), case=False, na=False)
+            filtered_df = filtered_df[mask]
+            filtered_df = filtered_df.drop(columns=["Date_parsed"])
+        else:
+            # Fallback to simple text search
+            filtered_df = filtered_df[
+                filtered_df["Date"].astype(str).str.contains(search_term.strip(), case=False, na=False)
+            ]
 
 # Universal Search Box
 unified_search = st.sidebar.text_input(
