@@ -230,7 +230,7 @@ def get_related_periods(period_code):
             base_year = 2000 + year if year < 100 else year
             
             related_periods.update([
-                f"GY{base_year+1}",   # Gas year starts Oct this year
+                f"GY{base_year}",   # Gas year starts Oct this year
                 f"{base_year}WIN",
                 f"{base_year}Q4",
                 f"{base_year+1}Q1",
@@ -246,7 +246,7 @@ def get_related_periods(period_code):
             base_year = 2000 + year if year < 100 else year
             
             related_periods.update([
-                f"GY{base_year}",    # Summer belongs to same-numbered GY
+                f"GY{base_year-1}",    # Summer belongs to same-numbered GY
                 f"{base_year}SUM",
                 f"{base_year}Q2",
                 f"{base_year}Q3",
