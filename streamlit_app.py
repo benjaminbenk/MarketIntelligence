@@ -186,6 +186,26 @@ if st.session_state.selected_tags:
 # --- Time Horizon Filter ---
 st.sidebar.header("📅 Date Filter")
 
+# First define the period options
+today = datetime.today()
+current_year = today.year
+predefined_options = sorted([
+    f"{month.upper()[:3]}{str(year)[-2:]}" for year in range(current_year, current_year + 3) 
+    for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+] + [
+    f"{str(year)[-2:]}Q{q}" for year in range(current_year, current_year + 3) for q in range(1, 5)
+] + [
+    f"{str(year)[-2:]}WIN" for year in range(current_year, current_year + 3)
+] + [
+    f"{str(year)[-2:]}SUM" for year in range(current_year, current_year + 3)
+] + [
+    f"CAL{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+] + [
+    f"GY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+] + [
+    f"SY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
+])
+
 def get_period_dates(period_code):
     """Return start and end dates for different period codes"""
     period_code = period_code.upper()  # Normalize to uppercase
@@ -216,11 +236,20 @@ def get_period_dates(period_code):
             return start_date, end_date, period_code
         except:
             pass
-    
-    # Handle other period codes (WIN, SUM, CAL, GY, SY)...
-    # ... (keep previous implementation for these)
-    
-    return None, None, None
+
+# Now create the UI components that use predefined_options
+search_input = st.sidebar.text_input(
+    "Search Date/Period",
+    key="time_horizon_input",
+    help="Search for dates (2024-03-15) or gas periods (AUG24, 24Q3, SUM24, GY24)"
+)
+
+selected_period = st.sidebar.selectbox(
+    "Or select common period:",
+    ["Select..."] + predefined_options,
+    key="selected_period"
+)
+
 
 # Combined search input with dropdown suggestions
 search_input = st.sidebar.text_input(
