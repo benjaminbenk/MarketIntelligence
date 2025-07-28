@@ -182,67 +182,94 @@ if st.session_state.selected_tags:
     filtered_df = filtered_df[
         filtered_df["Tags"].apply(lambda x: any(tag in x for tag in st.session_state.selected_tags))
     ]
+# ---------------------------------------------------
 
 # --- Time Horizon Filter ---
 st.sidebar.header("📅 Date Filter")
 
-# First define the period options
-today = datetime.today()
-current_year = today.year
-predefined_options = sorted([
-    f"{month.upper()[:3]}{str(year)[-2:]}" for year in range(current_year, current_year + 3) 
-    for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-] + [
-    f"{str(year)[-2:]}Q{q}" for year in range(current_year, current_year + 3) for q in range(1, 5)
-] + [
-    f"{str(year)[-2:]}WIN" for year in range(current_year, current_year + 3)
-] + [
-    f"{str(year)[-2:]}SUM" for year in range(current_year, current_year + 3)
-] + [
-    f"CAL{str(year)[-2:]}" for year in range(current_year, current_year + 3)
-] + [
-    f"GY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
-] + [
-    f"SY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
-])
-
 def get_period_dates(period_code):
-    """Return start and end dates for different period codes"""
-    period_code = period_code.upper()  # Normalize to uppercase
+    """Return start and end dates for different period codes with priority flag"""
+    period_code = period_code.upper().strip()
     today = datetime.today()
     current_year = today.year
     
     # Handle month codes (JAN24, FEB24, etc.)
-    if len(period_code) == 5 and period_code[:3].isalpha():
+    if len(period_code) in [4,5] and period_code[:3].isalpha():
         month_map = {
             'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
             'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
         }
-        month = month_map.get(period_code[:3])
-        year = 2000 + int(period_code[3:])  # Convert 24 to 2024
-        if month and year:
-            start_date = datetime(year, month, 1)
-            end_date = (start_date + pd.DateOffset(months=1)) - pd.DateOffset(days=1)
-            return start_date, end_date, period_code
+        month_str = period_code[:3]
+        year_str = period_code[3:]
+        if month_str in month_map:
+            try:
+                year = 2000 + int(year_str) if len(year_str) == 2 else int(year_str)
+                start_date = datetime(year, month_map[month_str], 1)
+                end_date = (start_date + pd.DateOffset(months=1)) - pd.DateOffset(days=1)
+                return start_date, end_date, period_code, False
+            except:
+                pass
     
-    # Handle quarters (24Q1, 24Q2, etc.)
-    if len(period_code) == 4 and 'Q' in period_code:
+    # Handle quarters (24Q1, 2025Q4, Q4-25, etc.)
+    if 'Q' in period_code:
         try:
-            year = 2000 + int(period_code[:2])
-            quarter = int(period_code[-1])
+            # Handle different quarter formats
+            clean_code = period_code.replace('-','').replace(' ','')
+            if clean_code.startswith('Q'):
+                quarter = int(clean_code[1])
+                year = 2000 + int(clean_code[2:4]) if len(clean_code[2:4]) == 2 else int(clean_code[2:6])
+            else:
+                year_part = clean_code.split('Q')[0]
+                year = 2000 + int(year_part) if len(year_part) == 2 else int(year_part)
+                quarter = int(clean_code.split('Q')[1][0])
+            
             start_month = (quarter - 1) * 3 + 1
             start_date = datetime(year, start_month, 1)
             end_date = (start_date + pd.DateOffset(months=3)) - pd.DateOffset(days=1)
-            return start_date, end_date, period_code
+            return start_date, end_date, f"{str(year)[-2:]}Q{quarter}", True
         except:
             pass
-    return None, None, None
+    
+    # Handle gas years (GY24)
+    if period_code.startswith('GY'):
+        try:
+            year = 2000 + int(period_code[2:]) if len(period_code[2:]) == 2 else int(period_code[2:])
+            start_date = datetime(year, 10, 1)
+            end_date = datetime(year+1, 9, 30)
+            return start_date, end_date, f"GY{str(year)[-2:]}", True
+        except:
+            pass
+    
+    # Handle partial matches (like "Q4" or "2025")
+    if period_code.isdigit() and len(period_code) in [2,4]:  # Year search
+        year = 2000 + int(period_code) if len(period_code) == 2 else int(period_code)
+        return datetime(year, 1, 1), datetime(year, 12, 31), str(year), False
+    
+    if period_code.startswith('Q'):
+        try:
+            quarter = int(period_code[1])
+            return None, None, f"Q{quarter}", True  # Flag for partial quarter match
+        except:
+            pass
+    
+    return None, None, None, False
 
-# Remove the duplicate text_input widget - keep only one instance
+# Generate all possible period codes
+today = datetime.today()
+current_year = today.year
+predefined_options = sorted([
+    f"{month.upper()[:3]}{str(year)[-2:]}" for year in range(current_year-1, current_year + 3) 
+    for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+] + [
+    f"{str(year)[-2:]}Q{q}" for year in range(current_year-1, current_year + 3) for q in range(1, 5)
+] + [
+    f"GY{str(year)[-2:]}" for year in range(current_year-1, current_year + 3)
+])
+
 search_input = st.sidebar.text_input(
     "Search Date/Period",
     key="time_horizon_input",
-    help="Search for dates (2024-03-15) or gas periods (AUG24, 24Q3, SUM24, GY24)"
+    help="Search for dates (2024-03-15), periods (AUG24, 25Q4), or years (2025)"
 )
 
 selected_period = st.sidebar.selectbox(
@@ -255,49 +282,52 @@ selected_period = st.sidebar.selectbox(
 search_term = search_input if search_input else (selected_period if selected_period != "Select..." else "")
 
 if search_term:
-    # First try to parse as a specific date or date range
+    # First look for exact matches (prioritized)
+    exact_matches = filtered_df[
+        filtered_df["Date"].astype(str).str.contains(f"\\b{search_term}\\b", case=False, regex=True, na=False)
+    ]
+    
+    # Then try to parse as date/period
     try:
         if " to " in search_term:  # Date range
             start_date, end_date = [pd.to_datetime(d.strip()) for d in search_term.split(" to ")]
             filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
-            mask = (
+            range_matches = filtered_df[
                 (filtered_df["Date_parsed"] >= start_date) & 
-                (filtered_df["Date_parsed"] <= end_date))
-            filtered_df = filtered_df[mask]
-            filtered_df = filtered_df.drop(columns=["Date_parsed"])
-        else:  # Single date
-            search_date = pd.to_datetime(search_term)
-            filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
-            mask = (filtered_df["Date_parsed"] == search_date)
-            filtered_df = filtered_df[mask]
-            filtered_df = filtered_df.drop(columns=["Date_parsed"])
-    except:
-        # If not a date, try to parse as a period code
-        start_date, end_date, period_code = get_period_dates(search_term)
-        if start_date and end_date:
-            filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
-            
-            # Create two conditions:
-            # 1. Dates that fall within the period range
-            date_range_mask = (
-                (filtered_df["Date_parsed"] >= start_date) & 
-                (filtered_df["Date_parsed"] <= end_date))
-            
-            # 2. Exact matches to the period code (like "25Q4" in the Date field)
-            exact_match_mask = filtered_df["Date"].astype(str).str.contains(
-                period_code, case=False, na=False)
-            
-            # Combine both conditions
-            mask = date_range_mask | exact_match_mask
-            
-            filtered_df = filtered_df[mask]
-            filtered_df = filtered_df.drop(columns=["Date_parsed"])
-        else:
-            # Fallback to simple text search
-            filtered_df = filtered_df[
-                filtered_df["Date"].astype(str).str.contains(search_term.strip(), case=False, na=False)
+                (filtered_df["Date_parsed"] <= end_date)
             ]
+        else:  # Single date or period code
+            start_date, end_date, norm_period_code, is_period = get_period_dates(search_term)
+            
+            if start_date and end_date:  # Valid date range
+                filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
+                range_matches = filtered_df[
+                    (filtered_df["Date_parsed"] >= start_date) & 
+                    (filtered_df["Date_parsed"] <= end_date)
+                ]
+            elif norm_period_code and is_period:  # Partial period match (like "Q4")
+                range_matches = filtered_df[
+                    filtered_df["Date"].astype(str).str.contains(norm_period_code, case=False, na=False)
+                ]
+            else:  # Try as single date
+                search_date = pd.to_datetime(search_term)
+                filtered_df["Date_parsed"] = pd.to_datetime(filtered_df["Date"], errors='coerce')
+                range_matches = filtered_df[filtered_df["Date_parsed"] == search_date]
+                
+        # Combine results (exact matches first)
+        filtered_df = pd.concat([exact_matches, range_matches]).drop_duplicates()
+        
+    except:
+        # Fallback to simple text search if parsing fails
+        filtered_df = filtered_df[
+            filtered_df["Date"].astype(str).str.contains(search_term.strip(), case=False, na=False)
+        ]
+    
+    # Clean up
+    if 'Date_parsed' in filtered_df.columns:
+        filtered_df = filtered_df.drop(columns=["Date_parsed"])
 
+# ---------------------------------------------------
 # Universal Search Box
 unified_search = st.sidebar.text_input(
     "Search All Fields",
