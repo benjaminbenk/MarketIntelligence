@@ -210,16 +210,16 @@ def get_related_periods(period_code):
             
             related_periods.update([
                 f"GY{year}",
-                f"{base_year-1}WIN",  # Winter of previous year
-                f"{base_year}SUM",    # Summer of current year
-                f"{base_year-1}Q4",   # Q4 of previous year
-                f"{base_year}Q1",     # Q1 of current year
-                f"{base_year}Q2",     # Q2 of current year
-                f"{base_year}Q3",     # Q3 of current year
-                *[f"{month}{base_year-1}" for month in ["OCT", "NOV", "DEC"]],
-                *[f"{month}{base_year}" for month in ["JAN", "FEB", "MAR"]],
-                *[f"{month}{base_year}" for month in ["APR", "MAY", "JUN"]],
-                *[f"{month}{base_year}" for month in ["JUL", "AUG", "SEP"]]
+                f"{base_year}WIN",  # Winter of previous year
+                f"{base_year+1}SUM",    # Summer of current year
+                f"{base_year}Q4",   # Q4 of previous year
+                f"{base_year+1}Q1",     # Q1 of current year
+                f"{base_year+1}Q2",     # Q2 of current year
+                f"{base_year+1}Q3",     # Q3 of current year
+                *[f"{month}{base_year}" for month in ["OCT", "NOV", "DEC"]],
+                *[f"{month}{base_year+1}" for month in ["JAN", "FEB", "MAR"]],
+                *[f"{month}{base_year+1}" for month in ["APR", "MAY", "JUN"]],
+                *[f"{month}{base_year+1}" for month in ["JUL", "AUG", "SEP"]]
             ])
             return sorted(related_periods)
         
