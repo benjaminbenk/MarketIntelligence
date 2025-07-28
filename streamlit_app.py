@@ -321,49 +321,55 @@ def get_related_periods(period_code):
     
     return [period_code]  # Fallback to exact match
 
-search_input = st.sidebar.text_input(
-    "Search Gas Period",
-    key="time_horizon_input",
-    help="Search for gas periods (GY25, 25WIN, 25Q4, OCT25) to see all related periods"
-)
 
-if search_input:
+def filter_dataframe_by_period(df, period_column, search_input):
+    """Filter dataframe based on period search input"""
+    if not search_input or not isinstance(df, pd.DataFrame) or period_column not in df.columns:
+        return df
+    
     related_periods = get_related_periods(search_input)
+    valid_periods = [str(p) for p in related_periods if p is not None and str(p).strip()]
     
-    # Filter out any None or non-string values and ensure all periods are valid strings
-    valid_periods = []
-    for p in related_periods:
-        try:
-            if p is not None and str(p).strip():
-                valid_periods.append(str(p).strip())
-        except:
-            continue
+    if not valid_periods:
+        return df
     
-    if valid_periods:
+    try:
+        pattern = r"\b(" + "|".join([re.escape(p) for p in valid_periods]) + r")\b"
+        return df[df[period_column].astype(str).str.contains(pattern, case=False, regex=True, na=False)]
+    except Exception as e:
+        st.error(f"Filtering error: {str(e)}")
+        return df
+
+# --- Streamlit UI Implementation ---
+def show_period_filter(df, period_column="Date"):
+    """Main function to show the period filter UI and handle filtering"""
+    st.sidebar.header("📅 Date Filter")
+    
+    search_input = st.sidebar.text_input(
+        "Search Gas Period",
+        key="time_horizon_input",
+        help="Search for gas periods (GY25, 25WIN, 25Q4, OCT25) to see all related periods"
+    )
+    
+    if search_input:
+        related_periods = get_related_periods(search_input)
+        valid_periods = [str(p) for p in related_periods if p is not None and str(p).strip()]
+        
+        if not valid_periods:
+            st.sidebar.warning("No valid periods found for this search")
+            return df
+        
         try:
-            # Create regex pattern with word boundaries for exact matching
-            pattern = r"\b(" + "|".join([re.escape(p) for p in valid_periods]) + r")\b"
-            
-            filtered_df = filtered_df[
-                filtered_df["Date"].astype(str).str.contains(
-                    pattern,
-                    case=False,
-                    regex=True,
-                    na=False
-                )
-            ]
-            
-            # Display included periods
+            # Show included periods
             with st.sidebar.expander("Included Periods", expanded=True):
                 st.write(f"Search term: `{search_input.upper()}`")
                 st.write("**Matching periods:**")
                 
-                # Group by period type for better display
                 periods_by_type = {
                     "Gas Years": [p for p in valid_periods if p.startswith("GY")],
                     "Seasons": [p for p in valid_periods if p.endswith(("WIN", "SUM"))],
                     "Quarters": [p for p in valid_periods if "Q" in p and not p.startswith("GY")],
-                    "Months": [p for p in valid_periods if p[:3] in month_map]
+                    "Months": [p for p in valid_periods if p[:3] in MONTH_MAP]
                 }
                 
                 for period_type, periods in periods_by_type.items():
@@ -374,11 +380,16 @@ if search_input:
                             cols[i%3].write(f"- {period}")
                 
                 st.write(f"*Total: {len(valid_periods)} related periods*")
-                
+            
+            # Apply the filter
+            pattern = r"\b(" + "|".join([re.escape(p) for p in valid_periods]) + r")\b"
+            return df[df[period_column].astype(str).str.contains(pattern, case=False, regex=True, na=False)]
+            
         except Exception as e:
             st.sidebar.error(f"Error filtering data: {str(e)}")
-    else:
-        st.sidebar.warning("No valid periods found for this search")
+            return df
+    
+    return df
 # ---------------------------------------------------
 # Universal Search Box
 unified_search = st.sidebar.text_input(
