@@ -9,7 +9,6 @@ from io import BytesIO
 import json
 import streamlit.components.v1 as components
 from urllib.parse import urlencode
-import re
 
 # --- Google Sheets Setup ---
 SHEET_NAME = "MarketIntelligenceGAS"
