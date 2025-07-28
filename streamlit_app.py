@@ -184,13 +184,16 @@ if st.session_state.selected_tags:
         filtered_df["Tags"].apply(lambda x: any(tag in x for tag in st.session_state.selected_tags))
     ]
 # ---------------------------------------------------
-# --- Time Horizon Filter ---
-st.sidebar.header("📅 Date Filter")
 
-month_map = {
-        'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
-        'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
-    }
+import re
+import streamlit as st
+from datetime import datetime
+
+# Constants
+MONTH_MAP = {
+    'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
+    'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
+}
 
 def get_related_periods(period_code):
     """Return all related period codes for a given search term with proper gas year associations"""
@@ -199,7 +202,6 @@ def get_related_periods(period_code):
     
     period_code = str(period_code).upper().strip()
     related_periods = set()
-    
     
     try:
         # Handle Gas Year (GY25 or GY2025)
@@ -210,16 +212,16 @@ def get_related_periods(period_code):
             
             related_periods.update([
                 f"GY{year}",
-                f"{base_year}WIN",  # Winter of previous year
-                f"{base_year+1}SUM",    # Summer of current year
-                f"{base_year}Q4",   # Q4 of previous year
-                f"{base_year+1}Q1",     # Q1 of current year
-                f"{base_year+1}Q2",     # Q2 of current year
-                f"{base_year+1}Q3",     # Q3 of current year
-                *[f"{month}{base_year}" for month in ["OCT", "NOV", "DEC"]],
-                *[f"{month}{base_year+1}" for month in ["JAN", "FEB", "MAR"]],
-                *[f"{month}{base_year+1}" for month in ["APR", "MAY", "JUN"]],
-                *[f"{month}{base_year+1}" for month in ["JUL", "AUG", "SEP"]]
+                f"{base_year-1}WIN",  # Winter of previous year
+                f"{base_year}SUM",    # Summer of current year
+                f"{base_year-1}Q4",   # Q4 of previous year
+                f"{base_year}Q1",     # Q1 of current year
+                f"{base_year}Q2",     # Q2 of current year
+                f"{base_year}Q3",     # Q3 of current year
+                *[f"{month}{base_year-1}" for month in ["OCT", "NOV", "DEC"]],
+                *[f"{month}{base_year}" for month in ["JAN", "FEB", "MAR"]],
+                *[f"{month}{base_year}" for month in ["APR", "MAY", "JUN"]],
+                *[f"{month}{base_year}" for month in ["JUL", "AUG", "SEP"]]
             ])
             return sorted(related_periods)
         
@@ -230,7 +232,7 @@ def get_related_periods(period_code):
             base_year = 2000 + year if year < 100 else year
             
             related_periods.update([
-                f"GY{base_year}",   # Gas year starts Oct this year
+                f"GY{base_year+1}",   # Gas year starts Oct this year
                 f"{base_year}WIN",
                 f"{base_year}Q4",
                 f"{base_year+1}Q1",
@@ -246,7 +248,7 @@ def get_related_periods(period_code):
             base_year = 2000 + year if year < 100 else year
             
             related_periods.update([
-                f"GY{base_year-1}",    # Summer belongs to same-numbered GY
+                f"GY{base_year}",    # Summer belongs to same-numbered GY
                 f"{base_year}SUM",
                 f"{base_year}Q2",
                 f"{base_year}Q3",
@@ -291,7 +293,7 @@ def get_related_periods(period_code):
             return sorted(related_periods)
         
         # Handle Months (OCT25, OCT2025)
-        if period_code[:3] in month_map and period_code[3:].strip().isdigit():
+        if period_code[:3] in MONTH_MAP and period_code[3:].strip().isdigit():
             month_str = period_code[:3]
             year_str = period_code[3:].strip()
             year = int(year_str)
@@ -301,7 +303,7 @@ def get_related_periods(period_code):
             related_periods.add(month_period)
             
             # Add quarter and related periods
-            quarter = (month_map[month_str] - 1) // 3 + 1
+            quarter = (MONTH_MAP[month_str] - 1) // 3 + 1
             related_periods.add(f"{base_year}Q{quarter}")
             
             if month_str in ['OCT', 'NOV', 'DEC']:
@@ -320,7 +322,6 @@ def get_related_periods(period_code):
         pass
     
     return [period_code]  # Fallback to exact match
-
 
 def filter_dataframe_by_period(df, period_column, search_input):
     """Filter dataframe based on period search input"""
@@ -390,6 +391,7 @@ def show_period_filter(df, period_column="Date"):
             return df
     
     return df
+
 # ---------------------------------------------------
 # Universal Search Box
 unified_search = st.sidebar.text_input(
