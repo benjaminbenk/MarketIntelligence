@@ -294,7 +294,7 @@ else:
                     (filtered_df["Date_parsed"] <= pd.to_datetime(end_date))
                 
                 # Also check for string matches (for gas period codes)
-                mask |= filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
+                mask = mask | filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
                 
                 filtered_df = filtered_df[mask]
                 filtered_df = filtered_df.drop(columns=["Date_parsed"])
@@ -307,6 +307,7 @@ else:
             filtered_df = filtered_df[
                 filtered_df["Date"].astype(str).str.contains(selected_range, case=False, na=False)
             ]
+
 
 # Universal Search Box
 unified_search = st.sidebar.text_input(
