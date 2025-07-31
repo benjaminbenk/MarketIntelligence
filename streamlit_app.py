@@ -64,7 +64,7 @@ CROSSBORDER_POINT_COUNTRY_MAP = {
     "Horgoš - HU>RS": "Hungary",
     "Mosonmagyaróvár - AT>HU": "Hungary",
     "Beregdaróc - HU>UA": "Hungary",
-    "BBalassagyamrat - HU>SK": "Hungary", 
+    "Balassagyarmat - HU>SK": "Hungary", 
     "Okovlje - HR>SI": "Croatia",
     "Bajakovo - HR>RS": "Croatia",    
     "Okovlje - SI>HR": "Slovenia",
