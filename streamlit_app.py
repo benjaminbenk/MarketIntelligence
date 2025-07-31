@@ -265,6 +265,8 @@ def date_filter_widget():
             st.sidebar.markdown(f"**Start:** {start}  \n**End:** {end}")
         return {"type": "predefined", "code": selected_code, "start": start, "end": end}
 
+date_filter = date_filter_widget()
+
 # ---------------------------------------------------
 # Universal Search Box
 unified_search = st.sidebar.text_input(
