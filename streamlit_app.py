@@ -473,25 +473,15 @@ if action_mode == "Add New":
     
         selected_cb = st.selectbox("Select Crossborder Point", cb_options, key="cb_select")
 
-    if selected_cb == "Other...":
-        point_name = st.text_input("Enter new Crossborder Point", key="cb_custom")
-        # For custom, allow country selection or default to previously selected country
-        country = st.selectbox("Country", COUNTRIES_LIST, index=COUNTRIES_LIST.index(country), key="cb_country_custom")
-    else:
-        point_name = selected_cb
-        # Show the country readonly
-        st.text_input("Country", value=country, disabled=True)
+        if selected_cb == "Other...":
+            point_name = st.text_input("Enter new Crossborder Point", key="cb_custom")
+            # For custom, allow country selection or default to previously selected country
+            country = st.selectbox("Country", COUNTRIES_LIST, index=COUNTRIES_LIST.index(country), key="cb_country_custom")
+        else:
+            point_name = selected_cb
+            # Show the country readonly
+            st.text_input("Country", value=country, disabled=True)
    
-
-    if selected_cb == "Other...":
-        point_name = st.text_input("Enter new Crossborder Point", key="cb_custom")
-        # For custom, allow country selection or default to previously selected country
-        country = st.selectbox("Country", COUNTRIES_LIST, index=COUNTRIES_LIST.index(country), key="cb_country_custom")
-    else:
-        point_name = selected_cb
-        # Show the country readonly
-        st.text_input("Country", value=country, disabled=True)
-
     
     elif point_type == "Virtual Point":
         selected_vp = st.selectbox("Select Virtual Point", list(VIRTUAL_POINT_COUNTRY_MAP.keys()) + ["Other..."], key="vp_select")
