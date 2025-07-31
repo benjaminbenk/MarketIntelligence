@@ -265,12 +265,6 @@ def date_filter_widget():
             st.sidebar.markdown(f"**Start:** {start}  \n**End:** {end}")
         return {"type": "predefined", "code": selected_code, "start": start, "end": end}
 
-# In your main app:
-date_filter = date_filter_widget()
-
-st.write("### Your selected filter:")
-st.write(date_filter)
-
 # ---------------------------------------------------
 # Universal Search Box
 unified_search = st.sidebar.text_input(
