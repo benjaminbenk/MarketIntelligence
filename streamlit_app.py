@@ -201,24 +201,20 @@ if st.session_state.selected_tags:
     ]
 # ---------------------------------------------------
 # --- Date Selection Logic ---
-st.subheader("Select Time Period")
+st.sidebar.markdown("### Time Period Selection")
 
-date_input_type = st.radio("Choose time input type:", ["Single Date", "Date Range"], horizontal=True)
+date_input_type = st.sidebar.radio("Input type:", ["Single Date", "Date Range"], horizontal=True)
 
 if date_input_type == "Single Date":
-    selected_date = st.date_input("Select date:", value=date.today())
-    st.write(f"📅 You selected: {selected_date}")
+    selected_date = st.sidebar.date_input("Select date:", value=date.today())
+    # Use `selected_date` in your logic
 else:
-    col1, col2 = st.columns(2)
-    with col1:
-        start_date = st.date_input("Start date:", value=date.today())
-    with col2:
-        end_date = st.date_input("End date:", value=date.today())
-    
+    start_date = st.sidebar.date_input("Start date:", value=date.today(), key="start")
+    end_date = st.sidebar.date_input("End date:", value=date.today(), key="end")
+
     if start_date > end_date:
-        st.error("⚠️ Start date cannot be after end date.")
-    else:
-        st.write(f"📅 Selected range: {start_date} → {end_date}")
+        st.sidebar.error("⚠️ Start date is after end date.")
+
 # ---------------------------------------------------
 # Universal Search Box
 unified_search = st.sidebar.text_input(
