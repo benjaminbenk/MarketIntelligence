@@ -200,8 +200,76 @@ if st.session_state.selected_tags:
         filtered_df["Tags"].apply(lambda x: any(tag in x for tag in st.session_state.selected_tags))
     ]
 # ---------------------------------------------------
-# --- Date Selection Logic ---
 
+def parse_date_code(code: str):
+    if code.startswith("CAL"):  # e.g., CAL26
+        year = 2000 + int(code[3:])
+        return date(year, 1, 1), date(year + 1, 1, 1)
+
+    elif code.startswith("GY"):  # Gas Year e.g., GY25 = 2025.10.01–2026.10.01
+        year = 2000 + int(code[2:])
+        return date(year, 10, 1), date(year + 1, 10, 1)
+
+    elif code.startswith("SY"):  # Storage Year e.g., SY24 = 2024.04.01–2025.04.01
+        year = 2000 + int(code[2:])
+        return date(year, 4, 1), date(year + 1, 4, 1)
+
+    elif code.endswith("SUM"):  # e.g., 25SUM = 2025.04.01–2025.10.01
+        year = 2000 + int(code[:2])
+        return date(year, 4, 1), date(year, 10, 1)
+
+    elif code.endswith("WIN"):  # e.g., 25WIN = 2025.10.01–2026.04.01
+        year = 2000 + int(code[:2])
+        return date(year, 10, 1), date(year + 1, 4, 1)
+
+    elif code[2] == "Q":  # e.g., 25Q1 = 2025 Q1 = Jan 1–Apr 1
+        year = 2000 + int(code[:2])
+        quarter = int(code[3])
+        start_month = (quarter - 1) * 3 + 1
+        end_month = start_month + 3
+        if end_month > 12:
+            return date(year, start_month, 1), date(year + 1, end_month - 12, 1)
+        else:
+            return date(year, start_month, 1), date(year, end_month, 1)
+
+    else:
+        raise ValueError(f"Unrecognized date code: {code}")
+
+def date_filter_widget():
+    st.sidebar.markdown("### Date Filter")
+
+    filter_type = st.sidebar.selectbox("Select date filter type", ["Single Date", "Date Range", "Predefined Period"])
+
+    if filter_type == "Single Date":
+        single_date = st.sidebar.date_input("Select date")
+        return {"type": "single", "date": single_date}
+
+    elif filter_type == "Date Range":
+        start_date = st.sidebar.date_input("Start date", key="start_date")
+        end_date = st.sidebar.date_input("End date", key="end_date")
+        if start_date > end_date:
+            st.sidebar.error("Start date cannot be after end date.")
+        return {"type": "range", "start": start_date, "end": end_date}
+
+    elif filter_type == "Predefined Period":
+        predefined_codes = [
+            "25Q1", "25Q2", "25Q3", "25Q4",
+            "25SUM", "25WIN",
+            "CAL25", "CAL26", "CAL27",
+            "GY24", "GY25", "GY26",
+            "SY24", "SY25", "SY26"
+        ]
+        selected_code = st.sidebar.selectbox("Select predefined period", predefined_codes)
+        start, end = parse_date_code(selected_code)
+        if start and end:
+            st.sidebar.markdown(f"**Start:** {start}  \n**End:** {end}")
+        return {"type": "predefined", "code": selected_code, "start": start, "end": end}
+
+# In your main app:
+date_filter = date_filter_widget()
+
+st.write("### Your selected filter:")
+st.write(date_filter)
 
 # ---------------------------------------------------
 # Universal Search Box
