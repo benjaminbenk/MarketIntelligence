@@ -202,17 +202,16 @@ if st.session_state.selected_tags:
 # ---------------------------------------------------
 
 import re
+import pandas as pd
 import streamlit as st
-from datetime import datetime
 
-# Constants
 MONTH_MAP = {
     'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
     'JUL': 7, 'AUG': 8, 'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12
 }
 
 def get_related_periods(period_code):
-    """Return all related period codes for a given search term with proper gas year associations"""
+    """Return all related period codes for a given search term with proper gas year associations."""
     if not period_code or not isinstance(period_code, (str, int, float)):
         return []
     
@@ -220,7 +219,7 @@ def get_related_periods(period_code):
     related_periods = set()
     
     try:
-        # Handle Gas Year (GY25 or GY2025)
+        # Gas Year (GY25 or GY2025)
         if period_code.startswith('GY'):
             year_str = period_code[2:]
             year = int(year_str)
@@ -241,7 +240,7 @@ def get_related_periods(period_code):
             ])
             return sorted(related_periods)
         
-        # Handle Winter (25WIN, 2025WIN)
+        # Winter (25WIN, 2025WIN)
         if period_code.endswith('WIN'):
             year_str = period_code[:-3]
             year = int(year_str)
@@ -257,14 +256,14 @@ def get_related_periods(period_code):
             ])
             return sorted(related_periods)
         
-        # Handle Summer (25SUM, 2025SUM)
+        # Summer (25SUM, 2025SUM)
         if period_code.endswith('SUM'):
             year_str = period_code[:-3]
             year = int(year_str)
             base_year = 2000 + year if year < 100 else year
             
             related_periods.update([
-                f"GY{base_year}",    # Summer belongs to same-numbered GY
+                f"GY{base_year}",
                 f"{base_year}SUM",
                 f"{base_year}Q2",
                 f"{base_year}Q3",
@@ -273,86 +272,74 @@ def get_related_periods(period_code):
             ])
             return sorted(related_periods)
         
-        # Handle Quarters (25Q4, Q4-25, 2025Q4)
-        if 'Q' in period_code:
-            clean_code = period_code.replace('-','').replace(' ','')
-            
-            if clean_code.startswith('Q'):
-                quarter = int(clean_code[1])
-                year_str = clean_code[2:]
-            else:
-                parts = clean_code.split('Q')
-                year_str = parts[0]
-                quarter = int(parts[1][0])
-            
-            year = int(year_str)
-            base_year = 2000 + year if year < 100 else year
-            
-            quarter_str = f"{base_year}Q{quarter}"
-            related_periods.add(quarter_str)
-            
-            # Add months and related periods
-            if quarter == 1:
-                related_periods.update([f"{month}{base_year}" for month in ["JAN", "FEB", "MAR"]])
-                related_periods.add(f"GY{base_year}")
-            elif quarter == 2:
-                related_periods.update([f"{month}{base_year}" for month in ["APR", "MAY", "JUN"]])
-                related_periods.add(f"GY{base_year}")
-            elif quarter == 3:
-                related_periods.update([f"{month}{base_year}" for month in ["JUL", "AUG", "SEP"]])
-                related_periods.add(f"GY{base_year}")
-            elif quarter == 4:
-                related_periods.update([f"{month}{base_year}" for month in ["OCT", "NOV", "DEC"]])
-                related_periods.add(f"GY{base_year+1}")
-                related_periods.add(f"{base_year}WIN")
-            
-            return sorted(related_periods)
+        # Quarters (25Q4, Q4-25, 2025Q4, Q1-2025, etc)
+        q_match = re.match(r"^Q([1-4])[- ]?(\d{2,4})$", period_code)
+        if not q_match:
+            q_match = re.match(r"^(\d{2,4})Q([1-4])$", period_code)
+        if q_match:
+            if q_match.lastindex == 2:
+                quarter, year_str = q_match.groups() if period_code.startswith('Q') else (q_match.group(2), q_match.group(1))
+                year = int(year_str)
+                base_year = 2000 + year if year < 100 else year
+                quarter = int(quarter)
+                quarter_str = f"{base_year}Q{quarter}"
+                related_periods.add(quarter_str)
+                # Add months and related periods
+                if quarter == 1:
+                    related_periods.update([f"{month}{base_year}" for month in ["JAN", "FEB", "MAR"]])
+                    related_periods.add(f"GY{base_year}")
+                elif quarter == 2:
+                    related_periods.update([f"{month}{base_year}" for month in ["APR", "MAY", "JUN"]])
+                    related_periods.add(f"GY{base_year}")
+                elif quarter == 3:
+                    related_periods.update([f"{month}{base_year}" for month in ["JUL", "AUG", "SEP"]])
+                    related_periods.add(f"GY{base_year}")
+                elif quarter == 4:
+                    related_periods.update([f"{month}{base_year}" for month in ["OCT", "NOV", "DEC"]])
+                    related_periods.add(f"GY{base_year+1}")
+                    related_periods.add(f"{base_year}WIN")
+                return sorted(related_periods)
         
-        # Handle Months (OCT25, OCT2025)
-        if period_code[:3] in MONTH_MAP and period_code[3:].strip().isdigit():
-            month_str = period_code[:3]
-            year_str = period_code[3:].strip()
+        # Months (OCT25, OCT2025)
+        m_match = re.match(r"^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\d{2,4})$", period_code)
+        if m_match:
+            month_str, year_str = m_match.groups()
             year = int(year_str)
             base_year = 2000 + year if year < 100 else year
-            
             month_period = f"{month_str}{base_year}"
             related_periods.add(month_period)
-            
             # Add quarter and related periods
             quarter = (MONTH_MAP[month_str] - 1) // 3 + 1
             related_periods.add(f"{base_year}Q{quarter}")
-            
             if month_str in ['OCT', 'NOV', 'DEC']:
                 related_periods.add(f"GY{base_year+1}")
                 related_periods.add(f"{base_year}WIN")
             elif month_str in ['JAN', 'FEB', 'MAR']:
                 related_periods.add(f"GY{base_year}")
                 related_periods.add(f"{base_year-1}WIN")
-            else:  # Summer months
+            else:
                 related_periods.add(f"GY{base_year}")
                 related_periods.add(f"{base_year}SUM")
-            
             return sorted(related_periods)
-        
     except (ValueError, IndexError, KeyError):
         pass
     
     return [period_code]  # Fallback to exact match
 
 def filter_dataframe_by_period(df, period_column, search_input):
-    """Filter dataframe based on period search input"""
+    """Filter dataframe based on period search input."""
     if not search_input or not isinstance(df, pd.DataFrame) or period_column not in df.columns:
         return df
-    
+
     related_periods = get_related_periods(search_input)
     valid_periods = [str(p) for p in related_periods if p is not None and str(p).strip()]
-    
+
     if not valid_periods:
         return df
-    
+
     try:
-        pattern = r"\b(" + "|".join([re.escape(p) for p in valid_periods]) + r")\b"
-        return df[df[period_column].astype(str).str.contains(pattern, case=False, regex=True, na=False)]
+        # Use exact match for period column cells
+        return df[df[period_column].astype(str).isin(valid_periods)]
     except Exception as e:
         st.error(f"Filtering error: {str(e)}")
         return df
