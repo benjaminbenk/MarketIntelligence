@@ -204,6 +204,10 @@ if st.session_state.selected_tags:
 import re
 import pandas as pd
 import streamlit as st
+date = st.date_input("Select a date")
+with st.sidebar:
+    date = st.date_input("Search Bar Date")
+
 
 MONTH_MAP = {
     'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4, 'MAY': 5, 'JUN': 6,
