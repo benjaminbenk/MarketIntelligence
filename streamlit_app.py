@@ -563,7 +563,7 @@ if action_mode == "Add New":
 
     country = st.selectbox("Country", COUNTRIES_LIST)
 
-    date_mode = st.radio("Select Time Mode", ["Single Day", "Date Range", "Predefined Code"])
+    date_mode = st.radio("Select Time Mode", ["Single Day", "Date Range", "Predefined Period"])
     
     if date_mode == "Single Day":
         date = st.date_input("Date", datetime.today())
