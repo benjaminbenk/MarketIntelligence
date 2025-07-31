@@ -30,9 +30,25 @@ COUNTRIES_LIST = [
 ]
 
 POINT_TYPES = ["Virtual Point", "Crossborder Point", "Storage", "Entire Country"]
-VIRTUAL_POINTS = ["MGP", "AT-VTP"]
+VIRTUAL_POINTS = list(VIRTUAL_POINT_COUNTRY_MAP.keys())
 STORAGE_POINTS = ["MMBF", "HEXUM"]
 PREDEFINED_TAGS = ["outage", "maintenance", "regulatory", "forecast"]
+
+VIRTUAL_POINT_COUNTRY_MAP = {
+    "EPİAŞ Natural Gas Market": "Turkey",
+    "Balkan Gas Hub (BGH)": "Bulgaria",
+    "VTP Romania": "Romania",
+    "DESFA VTP": "Greece",
+    "VTP Serbia": "Serbia",
+    "MGP": "Hungary",
+    "Croatian VTP": "Croatia",
+    "Slovenian VTP": "Slovenia",
+    "CEGH VTP": "Austria",
+    "eustream VTP": "Slovakia",
+    "VTP GTSOU": "Ukraine",
+    "VTP Moldova": "Moldova"
+}
+
 
 # --- Functions ---
 def get_gs_client():
@@ -546,8 +562,11 @@ if action_mode == "Add New":
     point_name = ""
     if point_type == "Crossborder Point":
         point_name = st.text_input("Crossborder Point Name")
-    elif point_type == "Virtual Point":
-        selected_vp = st.selectbox("Select Virtual Point", VIRTUAL_POINTS + ["Other..."], key="vp_select")
+    elif point_type == "Virtual Point" and point_name in VIRTUAL_POINT_COUNTRY_MAP:
+        country = VIRTUAL_POINT_COUNTRY_MAP[point_name]
+        st.text_input("Country", value=country, disabled=True)
+    else:
+        country = st.selectbox("Country", COUNTRIES_LIST)
         if selected_vp == "Other...":
             point_name = st.text_input("Enter new Virtual Point", key="vp_custom")
         else:
