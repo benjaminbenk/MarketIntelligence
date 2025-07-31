@@ -468,7 +468,7 @@ if action_mode == "Add New":
             country = st.selectbox("Country", COUNTRIES_LIST, key="cb_country_custom")
         else:
             point_name = selected_cb
-            country = CROSSBORDER_POINT_COUNTRY_MAP[selected_vp]
+            country = CROSSBORDER_POINT_COUNTRY_MAP[selected_cb]
             st.text_input("Country", value=country, disabled=True)
     
     elif point_type == "Virtual Point":
