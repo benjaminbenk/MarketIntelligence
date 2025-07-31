@@ -44,8 +44,49 @@ VIRTUAL_POINT_COUNTRY_MAP = {
     "VTP Moldova": "Moldova"
 }
 
+CROSSBORDER_POINT_COUNTRY_MAP = {
+    "Malkoçlar - TR>BG": "Turkey",
+    "Ipsala - TR>GR": "Turkey",
+    "Anapa - RU>TR": "Turkey",
+    "Malkoçlar - BG>TR": "Bulgaria",
+    "Ruse - BG>RO": "Bulgaria",
+    "Negru Voda - BG>RO": "Bulgaria",    
+    "Negru Voda - RO>BG": "Romania",
+    "Arad - RO>HU": "Romania",
+    "Mediesu Aurit - RO>UA": "Romania",    
+    "Kipoi - GR>TR": "Greece",
+    "Sidirokastro - GR>BG": "Greece",    
+    "Horgoš - RS>HU": "Serbia",
+    "Dimitrovgrad - RS>BG": "Serbia",
+    "Banatski Dvor - RS>RO": "Serbia",
+    "Vrska Cuka - RS>MK": "Serbia",    
+    "Csanádpalota - HU>RO": "Hungary",
+    "Horgoš - HU>RS": "Hungary",
+    "Mosonmagyaróvár - AT>HU": "Hungary",
+    "Beregdaróc - HU>UA": "Hungary",
+    "BBalassagyamrat - HU>SK": "Hungary", 
+    "Okovlje - HR>SI": "Croatia",
+    "Bajakovo - HR>RS": "Croatia",    
+    "Okovlje - SI>HR": "Slovenia",
+    "Rogatec - SI>AT": "Slovenia",    
+    "Baumgarten - AT>SK": "Austria",
+    "Rogatec - AT>SI": "Austria",
+    "Nickelsdorf - AT>HU": "Austria",
+    "Velke Kapusany - AT>SK": "Austria",    
+    "Velke Kapusany - SK>UA": "Slovakia",
+    "Baumgarten - SK>AT": "Slovakia",
+    "Uzhhorod - SK>UA": "Slovakia",    
+    "Mediesu Aurit - UA>RO": "Ukraine",
+    "Beregdaróc - UA>HU": "Ukraine",
+    "Uzhhorod - UA>SK": "Ukraine",
+    "Sudzha - RU>UA": "Ukraine",    
+    "Ungheni - MD>RO": "Moldova",
+    "Cuciurgan - MD>UA": "Moldova"    
+}
+
 POINT_TYPES = ["Virtual Point", "Crossborder Point", "Storage", "Entire Country"]
 VIRTUAL_POINTS = list(VIRTUAL_POINT_COUNTRY_MAP.keys())
+CROSSBORDER_POINTS = list(CROSSBORDER_POINT_COUNTRY_MAP.keys())
 STORAGE_POINTS = ["MMBF", "HEXUM"]
 PREDEFINED_TAGS = ["outage", "maintenance", "regulatory", "forecast"]
 
@@ -421,7 +462,14 @@ if action_mode == "Add New":
     point_name = ""
 
     if point_type == "Crossborder Point":
-        point_name = st.text_input("Crossborder Point Name")
+        selected_cb = st.selectbox("Select Crossborder Point", list(CROSSBORDER_POINT_COUNTRY_MAP.keys()) + ["Other..."], key="cb_select")
+        if selected_cb == "Other...":
+            point_name = st.text_input("Enter new Crossborder Point", key="cb_custom")
+            country = st.selectbox("Country", COUNTRIES_LIST, key="cb_country_custom")
+        else:
+            point_name = selected_cb
+            country = CROSSBORDER_POINT_COUNTRY_MAP[selected_vp]
+            st.text_input("Country", value=country, disabled=True)
     
     elif point_type == "Virtual Point":
         selected_vp = st.selectbox("Select Virtual Point", list(VIRTUAL_POINT_COUNTRY_MAP.keys()) + ["Other..."], key="vp_select")
