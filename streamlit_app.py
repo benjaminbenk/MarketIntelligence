@@ -640,7 +640,7 @@ if action_mode == "Add New":
 
     all_selected_tags = selected_tags + typed_tags
     tags_value = ", ".join(sorted(set(all_selected_tags)))
-    probability_value = st.number_input("Probability",["1-Unlikely","2-Likely","3-Certain"])
+    probability_value = st.selectbox("Probability",["1-Unlikely","2-Likely","3-Certain"],key="probability_unit_input")
 
 # --- Automatic summary generation function ---
 def generate_summary(info, point_name, counterparty, date):
