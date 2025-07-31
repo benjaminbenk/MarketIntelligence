@@ -21,7 +21,7 @@ SCOPES = [
 ]
 
 REQUIRED_COLUMNS = [
-    "Timestamp","Name", "Counterparty", "Country", "Point Type", "Point Name", "Date", "Info", "Capacity Value", "Capacity Unit", "Volume Value", "Volume Unit","Tags"
+    "Timestamp","Name", "Counterparty", "Country", "Point Type", "Point Name", "Date", "Info", "Capacity Value", "Capacity Unit", "Volume Value", "Volume Unit","Tags","Probability"
 ]
 
 COUNTRIES_LIST = [
@@ -640,6 +640,7 @@ if action_mode == "Add New":
 
     all_selected_tags = selected_tags + typed_tags
     tags_value = ", ".join(sorted(set(all_selected_tags)))
+    probability_value = st.number_input("Probability",["1-Unlikely","2-Likely","3-Certain"])
 
 # --- Automatic summary generation function ---
 def generate_summary(info, point_name, counterparty, date):
@@ -666,7 +667,8 @@ if st.button("Save Entry"):
             "Capacity Unit": capacity_unit,
             "Volume Value": volume_value,
             "Volume Unit": volume_unit,
-            "Tags": tags_value
+            "Tags": tags_value,
+            "Probability":probability_value
         }
 
         df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
