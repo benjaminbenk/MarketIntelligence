@@ -565,20 +565,20 @@ if action_mode == "Add New":
     elif point_type == "Virtual Point" and point_name in VIRTUAL_POINT_COUNTRY_MAP:
         country = VIRTUAL_POINT_COUNTRY_MAP[point_name]
         st.text_input("Country", value=country, disabled=True)
-    else:
-        country = st.selectbox("Country", COUNTRIES_LIST)
-        if selected_vp == "Other...":
-            point_name = st.text_input("Enter new Virtual Point", key="vp_custom")
         else:
-            point_name = selected_vp
-    else: 
+            country = st.selectbox("Country", COUNTRIES_LIST)
+            if selected_vp == "Other...":
+                point_name = st.text_input("Enter new Virtual Point", key="vp_custom")
+            else:
+                point_name = selected_vp
+    elif: 
         point_type == "Storage":
         selected_sp = st.selectbox("Select Storage Point", STORAGE_POINTS + ["Other..."], key="sp_select")
         if selected_sp == "Other...":
             point_name = st.text_input("Enter new Storage Point", key="sp_custom")
         else:
             point_name = selected_sp
-    else:
+    elif:
         point_name = "Entire Country"
 
     country = st.selectbox("Country", COUNTRIES_LIST)
