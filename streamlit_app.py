@@ -200,7 +200,25 @@ if st.session_state.selected_tags:
         filtered_df["Tags"].apply(lambda x: any(tag in x for tag in st.session_state.selected_tags))
     ]
 # ---------------------------------------------------
+# --- Date Selection Logic ---
+st.subheader("Select Time Period")
 
+date_input_type = st.radio("Choose time input type:", ["Single Date", "Date Range"], horizontal=True)
+
+if date_input_type == "Single Date":
+    selected_date = st.date_input("Select date:", value=date.today())
+    st.write(f"📅 You selected: {selected_date}")
+else:
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Start date:", value=date.today())
+    with col2:
+        end_date = st.date_input("End date:", value=date.today())
+    
+    if start_date > end_date:
+        st.error("⚠️ Start date cannot be after end date.")
+    else:
+        st.write(f"📅 Selected range: {start_date} → {end_date}")
 # ---------------------------------------------------
 # Universal Search Box
 unified_search = st.sidebar.text_input(
