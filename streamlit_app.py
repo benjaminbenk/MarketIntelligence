@@ -461,7 +461,7 @@ if action_mode == "Add New":
     # --- Dynamic selection of point name based on type ---
     point_name = ""
 
-   if point_type == "Crossborder Point":
+    if point_type == "Crossborder Point":
         # First select country
         country = st.selectbox("Select Country", COUNTRIES_LIST, key="cb_country")
     
@@ -472,6 +472,16 @@ if action_mode == "Add New":
         cb_options = filtered_cb_points + ["Other..."]
     
         selected_cb = st.selectbox("Select Crossborder Point", cb_options, key="cb_select")
+
+    if selected_cb == "Other...":
+        point_name = st.text_input("Enter new Crossborder Point", key="cb_custom")
+        # For custom, allow country selection or default to previously selected country
+        country = st.selectbox("Country", COUNTRIES_LIST, index=COUNTRIES_LIST.index(country), key="cb_country_custom")
+    else:
+        point_name = selected_cb
+        # Show the country readonly
+        st.text_input("Country", value=country, disabled=True)
+   
 
     if selected_cb == "Other...":
         point_name = st.text_input("Enter new Crossborder Point", key="cb_custom")
