@@ -29,11 +29,6 @@ COUNTRIES_LIST = [
     "Croatia", "Slovenia", "Austria", "Slovakia", "Ukraine", "Moldova"
 ]
 
-POINT_TYPES = ["Virtual Point", "Crossborder Point", "Storage", "Entire Country"]
-VIRTUAL_POINTS = list(VIRTUAL_POINT_COUNTRY_MAP.keys())
-STORAGE_POINTS = ["MMBF", "HEXUM"]
-PREDEFINED_TAGS = ["outage", "maintenance", "regulatory", "forecast"]
-
 VIRTUAL_POINT_COUNTRY_MAP = {
     "EPİAŞ Natural Gas Market": "Turkey",
     "Balkan Gas Hub (BGH)": "Bulgaria",
@@ -48,6 +43,11 @@ VIRTUAL_POINT_COUNTRY_MAP = {
     "VTP GTSOU": "Ukraine",
     "VTP Moldova": "Moldova"
 }
+
+POINT_TYPES = ["Virtual Point", "Crossborder Point", "Storage", "Entire Country"]
+VIRTUAL_POINTS = list(VIRTUAL_POINT_COUNTRY_MAP.keys())
+STORAGE_POINTS = ["MMBF", "HEXUM"]
+PREDEFINED_TAGS = ["outage", "maintenance", "regulatory", "forecast"]
 
 
 # --- Functions ---
