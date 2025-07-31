@@ -571,7 +571,8 @@ if action_mode == "Add New":
             point_name = st.text_input("Enter new Virtual Point", key="vp_custom")
         else:
             point_name = selected_vp
-    elif point_type == "Storage":
+    else: 
+        point_type == "Storage":
         selected_sp = st.selectbox("Select Storage Point", STORAGE_POINTS + ["Other..."], key="sp_select")
         if selected_sp == "Other...":
             point_name = st.text_input("Enter new Storage Point", key="sp_custom")
