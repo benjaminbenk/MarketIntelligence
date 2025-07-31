@@ -594,8 +594,8 @@ if action_mode == "Add New":
         ] + [
             f"SY{str(year)[-2:]}" for year in range(current_year, current_year + 3)
         ])
-        date_code = st.selectbox("Select Period Code", predefined_options)
-        custom_code = st.text_input("Or enter custom period code (e.g. CUSTOM_BLOCK1)", "")
+        date_code = st.selectbox("Select predefined Period", predefined_options)
+        custom_code = st.text_input("Or enter custom period (e.g. 28Q4)", "")
         date_repr = custom_code if custom_code else date_code
 
     info = st.text_area("Info")
