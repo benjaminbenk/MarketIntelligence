@@ -201,19 +201,7 @@ if st.session_state.selected_tags:
     ]
 # ---------------------------------------------------
 # --- Date Selection Logic ---
-st.sidebar.markdown("### Time Period Selection")
 
-date_input_type = st.sidebar.radio("Input type:", ["Single Date", "Date Range"], horizontal=True)
-
-if date_input_type == "Single Date":
-    selected_date = st.sidebar.date_input("Select date:", value=date.today())
-    # Use `selected_date` in your logic
-else:
-    start_date = st.sidebar.date_input("Start date:", value=date.today(), key="start")
-    end_date = st.sidebar.date_input("End date:", value=date.today(), key="end")
-
-    if start_date > end_date:
-        st.sidebar.error("⚠️ Start date is after end date.")
 
 # ---------------------------------------------------
 # Universal Search Box
