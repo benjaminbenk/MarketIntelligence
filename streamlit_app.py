@@ -560,28 +560,34 @@ if action_mode == "Add New":
 
     # --- Dynamic selection of point name based on type ---
     point_name = ""
+    country = ""
+    
     if point_type == "Crossborder Point":
         point_name = st.text_input("Crossborder Point Name")
-    elif point_type == "Virtual Point" and point_name in VIRTUAL_POINT_COUNTRY_MAP:
-        country = VIRTUAL_POINT_COUNTRY_MAP[point_name]
-        st.text_input("Country", value=country, disabled=True)
-        else:
+        country = st.selectbox("Country", COUNTRIES_LIST)
+    
+    elif point_type == "Virtual Point":
+        selected_vp = st.selectbox("Select Virtual Point", list(VIRTUAL_POINT_COUNTRY_MAP.keys()) + ["Other..."], key="vp_select")
+        if selected_vp == "Other...":
+            point_name = st.text_input("Enter new Virtual Point", key="vp_custom")
             country = st.selectbox("Country", COUNTRIES_LIST)
-            if selected_vp == "Other...":
-                point_name = st.text_input("Enter new Virtual Point", key="vp_custom")
-            else:
-                point_name = selected_vp
-    elif: 
-        point_type == "Storage":
+        else:
+            point_name = selected_vp
+            country = VIRTUAL_POINT_COUNTRY_MAP[selected_vp]
+            st.text_input("Country", value=country, disabled=True)
+    
+    elif point_type == "Storage":
         selected_sp = st.selectbox("Select Storage Point", STORAGE_POINTS + ["Other..."], key="sp_select")
         if selected_sp == "Other...":
             point_name = st.text_input("Enter new Storage Point", key="sp_custom")
         else:
             point_name = selected_sp
-    elif:
+        country = st.selectbox("Country", COUNTRIES_LIST)
+    
+    elif point_type == "Entire Country":
         point_name = "Entire Country"
+        country = st.selectbox("Country", COUNTRIES_LIST)
 
-    country = st.selectbox("Country", COUNTRIES_LIST)
 
     date_mode = st.radio("Select Time Mode", ["Single Day", "Date Range", "Predefined Period"])
     
